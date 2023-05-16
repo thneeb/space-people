@@ -1,0 +1,337 @@
+openapi: 3.0.2
+info:
+  title: space-peoples
+  version: 1.0.0
+  contact:
+    name: Thomas Neeb
+    email: thomas.neeb@nttdata.com
+paths:
+  /registration:
+    post:
+      operationId: createAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '200':
+          description: Returns the new generated client credentials
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenBody'
+  /token:
+    post:
+      operationId: token
+      responses:
+        '200':
+          description: Returns the access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenBody'
+  /my:
+    get:
+      operationId: retrieveAccount
+      responses:
+        '200':
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/Agent'
+           description: Returns the agent info for the logged in user
+  /my/planets:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Planet'
+          description: Returns the list of all owned planets
+  /my/planets/{planetId}:
+    parameters:
+      -
+        name: planetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Planet'
+          description: Returns the detailed information of one own planet
+  /my/planets/{planetId}/buildings:
+    parameters:
+      -
+        name: planetId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Building'
+          description: Returns all buildings on this planet
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildingType'
+      responses:
+        '201':
+          description: Triggered creation of a new building
+  /my/planets/{planetId}/buildings/{buildingType}:
+    parameters:
+      -
+        name: planetId
+        in: path
+        required: true
+        schema:
+          type: string
+      -
+        name: buildingType
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/BuildingType'
+    post:
+      operationId: levelUpBuilding
+      responses:
+        '201':
+          description: Level up confirmed
+  /my/ships:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ship'
+          description: Returns all owned ships
+  /my/researchs:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResearchLevel'
+          description: Returns the actual research level of all ship components
+  /my/researchs/{shipPartType}:
+    parameters:
+      -
+        name: shipPartType
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ShipPartType'
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GalacticPosition'
+      responses:
+        '201':
+          description: Research command accepted
+  /my/events:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+          description: Lists all open events
+  /admin/planets:
+    post:
+      operationId: generatePlanets
+      responses:
+        '201':
+          description: Generation process started
+components:
+  schemas:
+    RegistrationRequest:
+      required:
+        - nickname
+        - password
+      properties:
+        nickname:
+          $ref: '#/components/schemas/Nickname'
+        password:
+          type: string
+        email:
+          type: string
+    TokenBody:
+      required:
+        - access_token
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires:
+          type: integer
+        token:
+          type: string
+        scope:
+          type: string
+    Agent:
+      required:
+        - nickname
+      properties:
+        nickname:
+          $ref: '#/components/schemas/Nickname'
+    Nickname:
+      type: string
+      minimum: 4
+      maximum: 80
+    Planet:
+      properties:
+        planetId:
+          type: integer
+        coordinates:
+          $ref: '#/components/schemas/GalacticPosition'
+        nickname:
+          $ref: '#/components/schemas/Nickname'
+    GalacticPosition:
+      properties:
+        x:
+          type: integer
+          minimum: 1
+          maximum: 9
+        y:
+          type: integer
+          minimum: 1
+          maximum: 9
+        z:
+          type: integer
+          minimum: 1
+          maximum: 9
+        letter:
+          type: string
+          minimum: 1
+          maximum: 1
+    Building:
+      properties:
+        buildingType:
+          $ref: '#/components/schemas/BuildingType'
+        level:
+          type: integer
+        status:
+          $ref: '#/components/schemas/BuildingStatus'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+    ResourceLevel:
+      properties:
+        resourceType:
+          $ref: '#/components/schemas/ResourceType'
+        units:
+          type: integer
+    Ship:
+      properties:
+        nickname:
+          $ref: '#/components/schemas/Nickname'
+    ShipType:
+      properties:
+        nickname:
+          $ref: '#/components/schemas/Nickname'
+        equipment:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipPartLevel'
+    ShipPartLevel:
+      properties:
+        shipPart:
+          $ref: '#/components/schemas/ShipPartType'
+        level:
+          type: integer
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+        fuel:
+          type: integer
+    ResearchLevel:
+      properties:
+        shipPart:
+          $ref: '#/components/schemas/ShipPartType'
+        level:
+          type: integer
+    Event:
+      properties:
+        due:
+          type: string
+          format: datetime
+    BuildingStatus:
+      type: string
+      enum:
+        - READY
+        - BUILDING
+        - BUSY
+    BuildingType:
+      type: string
+      enum:
+        - SPACESHIP_RESEARCH_FACILITY
+        - SPACESHIP_FACTORY
+        - SPACEPORT
+        - BUILDING_YARD
+        - IRON_MINE
+        - CARBON_MINE
+        - SILICON_MINE
+        - PLANET_DEFENSE_UNIT
+        - FOUNTAIN
+        - ELECTROLYSIS_PLANT
+    ShipPartType:
+      type: string
+      enum:
+        - LASER
+        - INVASION_UNIT
+        - COLONISATION_UNIT
+        - CARGO_MODULE
+        - FUEL_TANK
+        - BOUNTY_UNIT
+        - ENGINE
+        - MINERAL_PROCESSOR
+        - SCANNER
+        - SHIELD
+    ResourceType:
+      type: string
+      enum:
+        - SILICON
+        - IRON
+        - CARBON
+        - WATER
+        - HYDRON
+        - OXYGEN
+        - SAND
+        - DIAMONDS
+        - SILVER
+        - GOLD

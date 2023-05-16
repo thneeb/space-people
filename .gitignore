@@ -1,0 +1,15 @@
+**/*.iml
+**/*.ipr
+**/*.iws
+**/*.ids
+**/.classpath
+**/.idea
+**/.project
+**/.settings
+**/target
+**/temp
+/data
+/log
+/work
+/bin
+.DS_Store

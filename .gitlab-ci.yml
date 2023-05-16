@@ -1,0 +1,71 @@
+variables:
+  NPM_CONFIG_PROGRESS: "false"
+  DOCKER_DRIVER: overlay
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+stages:
+  - build
+  - deploy
+  - integration
+
+build-job:
+  tags:
+    - cgn-bofur-01
+  stage: build
+  image: maven:3-jdk-8-openj9
+  script:
+    - mvn -f lib/pom.xml install
+    - mvn package
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .m2/repository
+  artifacts:
+    paths:
+      - target
+    expire_in: 3 months
+
+deploy-job:
+  tags:
+    - cgn-bofur-01
+  stage: deploy
+  only:
+    - develop
+  image: docker:20.10
+  script:
+    - ref_name=${CI_COMMIT_REF_NAME//.}
+    - docker build -t vodafone-solstice/let-server-${ref_name} .
+    - docker stop let-server-${ref_name} || true
+    - docker rm let-server-${ref_name} || true
+    - docker run -p 8101:8079 -d --name let-server-${ref_name} --network vodafone-solstice vodafone-solstice/let-server-${ref_name}:latest
+
+integration-job:
+  tags:
+    - cgn-bofur-01
+  stage: integration
+  only:
+   - develop
+  image: docker:20.10
+  script:
+    - ref_name=${CI_COMMIT_REF_NAME//.}
+    - docker build -f Dockerfile.test -t vodafone-solstice/testing-let-server-${ref_name} .
+    - docker stop testing-let-server-${ref_name} || true
+    - docker rm testing-let-server-${ref_name} || true
+    - docker run -p 8078:8079 -e SPRING_DATASOURCE_LEGACY_JDBCURL=jdbc:oracle:thin:@//cgn-thorin-01.de.softlab.net:1521/legacy_git3 -e SPRING_DATASOURCE_MIGRATION_JDBCURL=jdbc:oracle:thin:@//cgn-thorin-01.de.softlab.net:1521/migration_lve3 --name testing-let-server-${ref_name} --network vodafone-solstice vodafone-solstice/testing-let-server-${ref_name}:latest
+
+install-staging:
+  tags:
+    - cgn-bofur-01
+  stage: deploy
+  only:
+    - staging
+  image: docker:20.10
+  script:
+    - ref_name=${CI_COMMIT_REF_NAME//.}
+    - docker build -t nttdata/let-server-${ref_name}:${CI_COMMIT_SHORT_SHA} .
+    - docker login -u DeliverNTTData -p 159bc986dea189945ef55de4832c68cc vendor-upload.deliveryzone.de:5000
+#    - docker tag nttdata/let-server-${ref_name}:${CI_COMMIT_SHORT_SHA} vendor-upload.deliveryzone.de:5000/nttdata/let-server-${ref_name}:${CI_COMMIT_SHORT_SHA}
+#    - docker push vendor-upload.deliveryzone.de:5000/nttdata/let-server-${ref_name}:${CI_COMMIT_SHORT_SHA}
+    - docker tag nttdata/let-server-${ref_name}:${CI_COMMIT_SHORT_SHA} vendor-upload.deliveryzone.de:5000/nttdata/let-server-${ref_name}
+    - docker push vendor-upload.deliveryzone.de:5000/nttdata/let-server-${ref_name}
+    - docker logout vendor-upload.deliveryzone.de:5000
