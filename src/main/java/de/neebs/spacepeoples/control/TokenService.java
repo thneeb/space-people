@@ -3,10 +3,7 @@ package de.neebs.spacepeoples.control;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.jwt.JwsHeader;
-import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -39,6 +36,7 @@ public class TokenService {
                 .claim("account-id", accountId)
                 .build();
         JwsHeader header = JwsHeader.with(HS256).build();
-        return this.encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        Jwt jwt = encoder.encode(JwtEncoderParameters.from(header, claims));
+        return jwt.getTokenValue();
     }
 }

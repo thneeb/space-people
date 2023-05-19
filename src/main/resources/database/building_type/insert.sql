@@ -1,0 +1,10 @@
+INSERT INTO building_type(building_type, name) VALUES ('BUILDING_YARD', 'Building Yard');
+INSERT INTO building_type(building_type, name) VALUES ('ELECTROLYSIS_PLANT', 'Electrolysis Plant');
+INSERT INTO building_type(building_type, name) VALUES ('FOUNTAIN', 'Fountain');
+INSERT INTO building_type(building_type, name) VALUES ('IRON_MINE', 'Iron Mine');
+INSERT INTO building_type(building_type, name) VALUES ('CARBON_MINE', 'Carbon Mine');
+INSERT INTO building_type(building_type, name) VALUES ('SILICON_MINE', 'Silicon Mine');
+INSERT INTO building_type(building_type, name) VALUES ('PLANET_DEFENSE_UNIT', 'Planet Defense Unit');
+INSERT INTO building_type(building_type, name) VALUES ('SPACESHIP_FACTORY', 'Spaceship Factory');
+INSERT INTO building_type(building_type, name) VALUES ('SPACESHIP_HARBOUR', 'Spaceship Harbour');
+INSERT INTO building_type(building_type, name) VALUES ('SPACESHIP_RESEARCH_FACILITY', 'Spaceship Research Facility');

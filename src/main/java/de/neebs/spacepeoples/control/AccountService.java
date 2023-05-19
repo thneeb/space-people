@@ -1,9 +1,9 @@
 package de.neebs.spacepeoples.control;
 
 import de.neebs.spacepeoples.entity.Agent;
-import de.neebs.spacepeoples.entity.Planet;
 import de.neebs.spacepeoples.integration.database.Account;
 import de.neebs.spacepeoples.integration.database.AccountRepository;
+import de.neebs.spacepeoples.integration.database.Planet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +16,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accountRepository;
+
+    private final UniverseService universeService;
 
     public Agent retrieveAgent(String accountId) {
         Optional<Account> optional = accountRepository.findById(accountId);
@@ -39,9 +41,5 @@ public class AccountService {
             throw new IllegalStateException();
         }
         return optional.get();
-    }
-
-    public Planet assignFreePlanet(String accountId) {
-        return null;
     }
 }
