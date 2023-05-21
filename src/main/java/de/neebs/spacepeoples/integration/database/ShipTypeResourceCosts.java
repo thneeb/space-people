@@ -4,19 +4,18 @@ import de.neebs.spacepeoples.entity.ResourceLevel;
 import de.neebs.spacepeoples.entity.ResourceType;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.stereotype.Service;
 
 import javax.persistence.*;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "PLANET_RESOURCE")
-@IdClass(PlanetResourceId.class)
-public class PlanetResource extends PlanetResourceId {
+@Table(name = "SHIP_TYPE_RESOURCE_COSTS")
+@IdClass(ShipTypeResourceCostsId.class)
+public class ShipTypeResourceCosts {
     @Id
-    @Column(name = "PLANET_ID")
-    private String planetId;
+    @Column(name = "SHIP_TYPE_ID")
+    private String shipTypeId;
 
     @Id
     @Column(name = "RESOURCE_TYPE")

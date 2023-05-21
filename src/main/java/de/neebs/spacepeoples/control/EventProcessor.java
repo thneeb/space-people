@@ -12,8 +12,26 @@ import org.springframework.stereotype.Service;
 public class EventProcessor {
     private final DatabaseService databaseService;
     @Scheduled(fixedRate = 1000)
-    public void productResources() {
+    public void produceResources() {
         int resources = databaseService.executeResourceProduction();
-        log.debug("Updated resources: " + resources);
+        if (resources > 0) {
+            log.debug("Updated resources: " + resources);
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void finishBuildings() {
+        int finishedBuildings = databaseService.finishBuildings();
+        if (finishedBuildings > 0) {
+            log.debug("Finished buildings: " + finishedBuildings);
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void finishResearch() {
+        int finishedResearches = databaseService.finishResearches();
+        if (finishedResearches > 0) {
+            log.debug("Finished researches: " + finishedResearches);
+        }
     }
 }

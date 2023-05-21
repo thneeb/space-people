@@ -4,13 +4,12 @@ import de.neebs.spacepeoples.entity.GalacticPosition;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Getter
 @Setter
 @Entity
+@Table(name = "planet")
 public class Planet {
     @Id
     @Column(name = "PLANET_ID")
@@ -18,6 +17,9 @@ public class Planet {
 
     @Column(name = "GALAXY_ID")
     private String galaxyId;
+
+    @Transient
+    private String galaxyName;
 
     @Column(name = "COORDINATE_X")
     private int x;
@@ -39,8 +41,10 @@ public class Planet {
 
     public de.neebs.spacepeoples.entity.Planet toWeb() {
         de.neebs.spacepeoples.entity.Planet planet = new de.neebs.spacepeoples.entity.Planet();
+        planet.setId(galaxyName + "-" + x + "-" + y + "-" + z + "-" + orbit);
         planet.setCoordinates(new GalacticPosition(x, y, z, String.valueOf(orbit)));
-        planet.setNickname(name);
+        planet.setPlanetName(name);
+        planet.setGalaxyName(galaxyName);
         return planet;
     }
 }

@@ -47,6 +47,7 @@ paths:
            description: Returns the agent info for the logged in user
   /my/planets:
     get:
+      operationId: retrieveMyPlanets
       responses:
         '200':
           content:
@@ -65,12 +66,13 @@ paths:
         schema:
           type: string
     get:
+      operationId: retrieveMyPlanetDetails
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Planet'
+                $ref: '#/components/schemas/PlanetDetails'
           description: Returns the detailed information of one own planet
   /my/planets/{planetId}/buildings:
     parameters:
@@ -81,6 +83,7 @@ paths:
         schema:
           type: string
     get:
+      operationId: retrievePlanetBuildings
       responses:
         '200':
           content:
@@ -91,11 +94,14 @@ paths:
                   $ref: '#/components/schemas/Building'
           description: Returns all buildings on this planet
     post:
+      operationId: createBuilding
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BuildingType'
+              properties:
+                buildingType:
+                  $ref: '#/components/schemas/BuildingType'
       responses:
         '201':
           description: Triggered creation of a new building
@@ -113,6 +119,15 @@ paths:
         required: true
         schema:
           $ref: '#/components/schemas/BuildingType'
+    get:
+      operationId: retrieveBuilding
+      responses:
+        '200':
+          description: Returns the requested building on that planet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
     post:
       operationId: levelUpBuilding
       responses:
@@ -131,6 +146,7 @@ paths:
           description: Returns all owned ships
   /my/researchs:
     get:
+      operationId: retrieveResearchLevels
       responses:
         '200':
           content:
@@ -140,6 +156,20 @@ paths:
                 items:
                   $ref: '#/components/schemas/ResearchLevel'
           description: Returns the actual research level of all ship components
+    post:
+      operationId: startShipPartResearch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                planetId:
+                  type: string
+                shipPart:
+                  $ref: '#/components/schemas/ShipPartType'
+      responses:
+        '201':
+          description: Research command accepted
   /my/researchs/{shipPartType}:
     parameters:
       -
@@ -149,25 +179,43 @@ paths:
         schema:
           $ref: '#/components/schemas/ShipPartType'
     post:
+      operationId: levelUpShipPartResearch
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GalacticPosition'
+              properties:
+                planetId:
+                  type: string
       responses:
         '201':
           description: Research command accepted
-  /my/events:
+  /my/ship-types:
     get:
+      operationId: retrieveShipTypes
       responses:
         '200':
+          description: retrieve all ship types
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Event'
-          description: Lists all open events
+                  $ref: '#/components/schemas/ShipType'
+    post:
+      operationId: createShipType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipType'
+      responses:
+        '200':
+          description: creates a new ship type with the given components
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipType'
   /galaxies:
     get:
       operationId: retrieveGalaxies
@@ -199,6 +247,18 @@ paths:
         schema:
           type: string
         required: true
+  /building-types:
+    get:
+      operationId: retrieveBuildingTypes
+      responses:
+        '200':
+          description: Returns all available building types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BuildingType'
   /admin/galaxies:
     post:
       operationId: createGalaxy
@@ -253,11 +313,35 @@ components:
       type: string
       minimum: 4
       maximum: 80
-    Planet:
+    PlanetDetails:
+      required:
+        - planet
+        - buildings
+        - resources
       properties:
+        planet:
+          $ref: '#/components/schemas/Planet'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+        buildings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Building'
+    Planet:
+      required:
+        - id
+        - coordinates
+        - nickname
+      properties:
+        id:
+          type: string
         coordinates:
           $ref: '#/components/schemas/GalacticPosition'
-        nickname:
+        planetName:
+          $ref: '#/components/schemas/Nickname'
+        galaxyName:
           $ref: '#/components/schemas/Nickname'
     GalacticPosition:
       required:
@@ -288,13 +372,13 @@ components:
           $ref: '#/components/schemas/BuildingType'
         level:
           type: integer
-        status:
-          $ref: '#/components/schemas/BuildingStatus'
-        resources:
-          type: array
-          items:
-            $ref: '#/components/schemas/ResourceLevel'
+        nextLevelUpdate:
+          type: string
+          format: date-time
     ResourceLevel:
+      required:
+        - resourceType
+        - units
       properties:
         resourceType:
           $ref: '#/components/schemas/ResourceType'
@@ -308,21 +392,35 @@ components:
       properties:
         nickname:
           $ref: '#/components/schemas/Nickname'
-        equipment:
+        equipments:
           type: array
           items:
             $ref: '#/components/schemas/ShipPartLevel'
-    ShipPartLevel:
-      properties:
-        shipPart:
-          $ref: '#/components/schemas/ShipPartType'
-        level:
-          type: integer
         resources:
           type: array
           items:
             $ref: '#/components/schemas/ResourceLevel'
+        stability:
+          type: integer
         fuel:
+          type: integer
+        attack:
+          type: integer
+        armour:
+          type: integer
+        hydrogenConsumptionPerHour:
+          type: integer
+        acceleration:
+          type: integer
+        cargo:
+          type: integer
+    ShipPartLevel:
+      required:
+        - shipPart
+      properties:
+        shipPart:
+          $ref: '#/components/schemas/ShipPartType'
+        level:
           type: integer
     ResearchLevel:
       properties:
@@ -330,17 +428,11 @@ components:
           $ref: '#/components/schemas/ShipPartType'
         level:
           type: integer
-    Event:
-      properties:
-        due:
+        planetId:
           type: string
-          format: datetime
-    BuildingStatus:
-      type: string
-      enum:
-        - READY
-        - BUILDING
-        - BUSY
+        nextLevelUpdate:
+          type: string
+          format: date-time
     BuildingType:
       type: string
       enum:
@@ -357,6 +449,7 @@ components:
     ShipPartType:
       type: string
       enum:
+        - BASIC_UNIT
         - LASER
         - INVASION_UNIT
         - COLONISATION_UNIT
@@ -367,6 +460,7 @@ components:
         - MINERAL_PROCESSOR
         - SCANNER
         - SHIELD
+        - ARMOUR
     ResourceType:
       type: string
       enum:
@@ -374,7 +468,7 @@ components:
         - IRON
         - CARBON
         - WATER
-        - HYDRON
+        - HYDROGEN
         - OXYGEN
         - SAND
         - DIAMONDS

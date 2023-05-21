@@ -9,6 +9,8 @@ logging:
 #    org.springframework.orm.jpa: DEBUG
 #    org.springframework.transaction: DEBUG
 server:
+  error:
+    include-message: always
   port: 8079
   servlet:
     context-path: /
@@ -21,6 +23,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: Admin123
+    auto-commit: false
 info:
   app:
     name: '@project.name@'

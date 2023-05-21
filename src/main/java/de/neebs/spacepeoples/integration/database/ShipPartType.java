@@ -11,15 +11,21 @@ import javax.persistence.Table;
 @Getter
 @Setter
 @Entity
-@Table(name = "BUILDING_TYPE")
-public class BuildingType {
+@Table(name = "SHIP_PART_TYPE")
+public class ShipPartType {
     @Id
-    @Column(name = "BUILDING_TYPE")
-    private String buildingType;
+    @Column(name = "SHIP_PART_TYPE")
+    private String shipPartType;
 
     @Column(name = "DURATION_BASIS")
     private double durationBasis;
 
     @Column(name = "DURATION_IN_SECONDS")
     private int durationInSeconds;
+
+    @Column(name = "SPACE_FIX")
+    private int spaceFix;
+
+    @Column(name = "SPACE_PER_LEVEL")
+    private int spacePerLevel;
 }

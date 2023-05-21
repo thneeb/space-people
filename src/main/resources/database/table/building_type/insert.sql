@@ -1,0 +1,10 @@
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('BUILDING_YARD', 'Building Yard', 1200, 1.1);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('ELECTROLYSIS_PLANT', 'Electrolysis Plant', 1200, 1.2);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('FOUNTAIN', 'Fountain', 1200, 1.3);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('IRON_MINE', 'Iron Mine', 1200, 1.4);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('CARBON_MINE', 'Carbon Mine', 1200, 1.5);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('SILICON_MINE', 'Silicon Mine', 1200, 1.6);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('PLANET_DEFENSE_UNIT', 'Planet Defense Unit', 1200, 1.7);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('SPACESHIP_FACTORY', 'Spaceship Factory', 1200, 1.8);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('SPACESHIP_HARBOUR', 'Spaceship Harbour', 1200, 1.9);
+INSERT INTO building_type(building_type, name, duration_in_seconds, duration_basis) VALUES ('SPACESHIP_RESEARCH_FACILITY', 'Spaceship Research Facility', 1200, 2.0);

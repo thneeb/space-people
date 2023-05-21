@@ -9,8 +9,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class BuildingId implements Serializable {
-    private String planetId;
-
-    private String buildingType;
+public class ResearchLevelId implements Serializable {
+    private String accountId;
+    private String shipPartType;
 }

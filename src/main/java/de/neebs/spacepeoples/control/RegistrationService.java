@@ -25,10 +25,10 @@ public class RegistrationService {
 
     public Account register(RegistrationRequest registrationRequest) {
         Account account = accountService.createAccount(registrationRequest.getNickname(), passwordEncoder.encode(registrationRequest.getPassword()));
-        Planet planet = universeService.assignFreePlanet(account.getAccountId());
-        databaseService.createInitialResourceBuildings(planet.getPlanetId());
-        databaseService.createInitialResourceEvents(planet.getPlanetId());
-        universeService.createBuildings(planet.getPlanetId(), Set.of(BuildingType.BUILDING_YARD));
+        String planetId = universeService.assignFreePlanet(account.getAccountId());
+        databaseService.createInitialResourceBuildings(planetId);
+        universeService.createBuildings(planetId, Set.of(BuildingTypeEnum.BUILDING_YARD));
+        databaseService.createInitialResearchStatus(account.getAccountId());
         return account;
     }
 

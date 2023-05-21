@@ -18,7 +18,7 @@ public class Galaxy {
     @Column(name = "NICKNAME")
     private String nickname;
 
-    public de.neebs.spacepeoples.entity.Universe toWeb() {
-        return new de.neebs.spacepeoples.entity.Universe(nickname);
+    public de.neebs.spacepeoples.entity.Galaxy toWeb() {
+        return new de.neebs.spacepeoples.entity.Galaxy(nickname);
     }
 }

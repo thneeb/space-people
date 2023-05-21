@@ -4,5 +4,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
-public class PlanetNotAvailableException extends RuntimeException {
+public class BuildingNotAvailableException extends RuntimeException {
+    public BuildingNotAvailableException(String message) {
+        super(message);
+    }
 }
