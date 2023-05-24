@@ -17,9 +17,12 @@ public class BuildingType {
     @Column(name = "BUILDING_TYPE")
     private String buildingType;
 
-    @Column(name = "DURATION_BASIS")
-    private double durationBasis;
-
     @Column(name = "DURATION_IN_SECONDS")
     private int durationInSeconds;
+
+    @Column(name = "LEVEL_BASE")
+    private double levelBase;
+
+    @Column(name = "BUILDING_YARD_BASE")
+    private double buildingYardBase;
 }

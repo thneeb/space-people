@@ -3,7 +3,6 @@ package de.neebs.spacepeoples.control;
 import de.neebs.spacepeoples.entity.Agent;
 import de.neebs.spacepeoples.integration.database.Account;
 import de.neebs.spacepeoples.integration.database.AccountRepository;
-import de.neebs.spacepeoples.integration.database.Planet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ public class AccountService {
 
     public Agent retrieveAgent(String accountId) {
         Optional<Account> optional = accountRepository.findById(accountId);
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             throw new IllegalStateException();
         }
         return new Agent(optional.get().getNickname());
@@ -37,7 +36,7 @@ public class AccountService {
 
     public Account retrieveAgentByNickname(String name) {
         Optional<Account> optional = accountRepository.findByNickname(name);
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             throw new IllegalStateException();
         }
         return optional.get();

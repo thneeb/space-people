@@ -13,7 +13,6 @@ public class DatabaseService {
         jdbcTemplate.update("INSERT INTO planet_building (building_type, planet_id, level) " +
                 "SELECT building_type, ?, 1 " +
                 "FROM building_resource_production " +
-                "WHERE production_per_hour IS NOT NULL " +
                 "GROUP BY building_type", planetId);
     }
 
@@ -29,8 +28,8 @@ public class DatabaseService {
         return jdbcTemplate.update("MERGE INTO planet_resource re\n" +
                 "USING (\n" +
                 "\tSELECT pr.planet_id, pr.resource_type,\n" +
-                "\t\tbrp.production_per_hour * pr.productivity / 100 * brp.production_basis ^ pb.level / 3600 * EXTRACT(EPOCH FROM (NOW()-last_update)) AS additional_units, \n" +
-                "\t\tNOW() + interval '1 hour' * CEILING(brp.production_per_hour * pr.productivity / 100 * brp.production_basis ^ pb.level / 3600) / (brp.production_per_hour * pr.productivity / 100 * brp.production_basis ^ pb.level) AS next_update\n" +
+                "\t\tbrp.basic_value * pr.productivity / 100 * brp.base ^ (pb.level + brp.exponent_modifier)/ 3600 * EXTRACT(EPOCH FROM (NOW()-last_update)) AS additional_units, " +
+                "\t\tNOW() + interval '1 hour' * CEILING(brp.basic_value * pr.productivity / 100 * brp.base ^ (pb.level + brp.exponent_modifier) / 3600) / (brp.basic_value * pr.productivity / 100 * brp.base ^ (pb.level + brp.exponent_modifier)) AS next_update\n" +
                 "\tFROM planet_resource pr\n" +
                 "\tJOIN building_resource_production brp ON brp.resource_type = pr.resource_type\n" +
                 "\tJOIN planet_building pb ON brp.building_type = pb.building_type AND pr.planet_id = pb.planet_id\n" +

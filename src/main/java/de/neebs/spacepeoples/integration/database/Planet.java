@@ -40,9 +40,8 @@ public class Planet {
     private String accountId;
 
     public de.neebs.spacepeoples.entity.Planet toWeb() {
-        de.neebs.spacepeoples.entity.Planet planet = new de.neebs.spacepeoples.entity.Planet();
-        planet.setId(galaxyName + "-" + x + "-" + y + "-" + z + "-" + orbit);
-        planet.setCoordinates(new GalacticPosition(x, y, z, String.valueOf(orbit)));
+        de.neebs.spacepeoples.entity.Planet planet = new de.neebs.spacepeoples.entity.Planet(
+                galaxyName + "-" + x + "-" + y + "-" + z + "-" + orbit, new GalacticPosition(x, y, z, String.valueOf(orbit)));
         planet.setPlanetName(name);
         planet.setGalaxyName(galaxyName);
         return planet;

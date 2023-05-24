@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String nickname) throws UsernameNotFoundException {
         Optional<Account> optional = accountRepository.findByNickname(nickname);
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             throw new UsernameNotFoundException(nickname + " is unknown");
         }
         List<GrantedAuthority> list = new ArrayList<>();

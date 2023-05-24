@@ -1,6 +1,5 @@
 package de.neebs.spacepeoples.integration.database;
 
-import de.neebs.spacepeoples.entity.ResourceLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

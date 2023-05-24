@@ -3,7 +3,7 @@ package de.neebs.spacepeoples.control;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class CheckConversion {
+public class CheckConversionTest {
     @Test
     void testSalutationConvert() {
         Assertions.assertEquals("Herr Dr.", "Mr. Dr.".replaceAll("Mr.", "Herr"));

@@ -36,7 +36,7 @@ public class AdminService {
         for (int x = 1; x < 10; x++) {
             for (int y = 1; y < 10; y++) {
                 for (int z = 1; z < 10; z++) {
-                    planets.addAll(generateSolarsystem(galaxyId, x, y, z));
+                    planets.addAll(generateSolarSystem(galaxyId, x, y, z));
                 }
             }
         }
@@ -44,7 +44,7 @@ public class AdminService {
         databaseService.generateResources(galaxyId);
     }
 
-    private List<Planet> generateSolarsystem(String universeId, int x, int y, int z) {
+    private List<Planet> generateSolarSystem(String universeId, int x, int y, int z) {
         List<Planet> planets = new ArrayList<>();
         int size = new Random().nextInt(7);
         char startLetter = 'A';

@@ -1,6 +1,5 @@
 package de.neebs.spacepeoples.integration.database;
 
-import de.neebs.spacepeoples.entity.BuildingStatus;
 import de.neebs.spacepeoples.entity.BuildingType;
 import lombok.Getter;
 import lombok.Setter;

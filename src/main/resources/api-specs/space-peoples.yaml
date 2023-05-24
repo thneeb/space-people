@@ -436,16 +436,18 @@ components:
     BuildingType:
       type: string
       enum:
-        - SPACESHIP_RESEARCH_FACILITY
-        - SPACESHIP_FACTORY
-        - SPACEPORT
         - BUILDING_YARD
+        - SPACEPORT
+        - RESIDENTIAL_BUILDING
+        - SOLAR_PARK
         - IRON_MINE
         - CARBON_MINE
         - SILICON_MINE
-        - PLANET_DEFENSE_UNIT
         - FOUNTAIN
         - ELECTROLYSIS_PLANT
+        - WAREHOUSE
+        - SPACESHIP_FACTORY
+        - SPACESHIP_RESEARCH_FACILITY
     ShipPartType:
       type: string
       enum:

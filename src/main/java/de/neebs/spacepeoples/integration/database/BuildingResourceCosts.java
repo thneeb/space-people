@@ -19,9 +19,12 @@ public class BuildingResourceCosts extends BuildingResourceCostsId {
     @Column(name = "RESOURCE_TYPE")
     private String resourceType;
 
-    @Column(name = "BASIC_COSTS")
-    private int basicCosts;
+    @Column(name = "BASIC_VALUE")
+    private int basicValue;
 
-    @Column(name = "COSTS_BASIS")
-    private double costsBasis;
+    @Column(name = "BASE")
+    private double base;
+
+    @Column(name = "EXPONENT_MODIFIER")
+    private double exponentModifier;
 }

@@ -124,14 +124,14 @@ public class UniverseService {
             if (optional.isEmpty()) {
                 throw new NotAffordableException();
             }
-            optional.get().setUnits((int)(optional.get().getUnits() - cost.getBasicCosts() * Math.pow(cost.getCostsBasis(), level)));
+            optional.get().setUnits((int)(optional.get().getUnits() - cost.getBasicValue() * Math.pow(cost.getBase(), level + cost.getExponentModifier())));
             if (optional.get().getUnits() < 0) {
                 throw new NotAffordableException();
             }
         }
         planetResourceRepository.saveAll(resources);
         Calendar calendar = GregorianCalendar.getInstance();
-        int seconds = (int)(optionalBuildingType.get().getDurationInSeconds() * Math.pow(optionalBuildingType.get().getDurationBasis(), Math.max(level - buildingYardLevel, 1)));
+        int seconds = (int)(optionalBuildingType.get().getDurationInSeconds() * Math.pow(optionalBuildingType.get().getLevelBase(), level) * Math.pow(optionalBuildingType.get().getBuildingYardBase(), buildingYardLevel));
         calendar.add(Calendar.SECOND, seconds);
 
         Building building = new Building();
