@@ -23,3 +23,6 @@ INSERT INTO building_resource_costs(building_type, resource_type, basic_value, b
 INSERT INTO building_resource_costs(building_type, resource_type, basic_value, base, exponent_modifier) VALUES ('RESIDENTIAL_BUILDING', 'SILICON', 15, 1.11, -0.555);
 INSERT INTO building_resource_costs(building_type, resource_type, basic_value, base, exponent_modifier) VALUES ('RESIDENTIAL_BUILDING', 'WATER', 50, 1.11, -0.555);
 INSERT INTO building_resource_costs(building_type, resource_type, basic_value, base, exponent_modifier) VALUES ('RESIDENTIAL_BUILDING', 'OXYGEN', 25, 1.11, -0.555);
+INSERT INTO building_resource_costs(building_type, resource_type, basic_value, base, exponent_modifier) VALUES ('RECYCLING_FACILITY', 'IRON', 300, 1.11, -0.555);
+INSERT INTO building_resource_costs(building_type, resource_type, basic_value, base, exponent_modifier) VALUES ('RECYCLING_FACILITY', 'SILICON', 300, 1.11, -0.555);
+INSERT INTO building_resource_costs(building_type, resource_type, basic_value, base, exponent_modifier) VALUES ('RECYCLING_FACILITY', 'CARBON', 25, 1.11, -0.555);

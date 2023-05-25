@@ -27,7 +27,7 @@ public class RegistrationService {
         Account account = accountService.createAccount(registrationRequest.getNickname(), passwordEncoder.encode(registrationRequest.getPassword()));
         String planetId = universeService.assignFreePlanet(account.getAccountId());
         databaseService.createInitialResourceBuildings(planetId);
-        universeService.createBuildings(planetId, Set.of(BuildingTypeEnum.BUILDING_YARD));
+        universeService.createBuildings(planetId, Set.of(BuildingTypeEnum.BUILDING_YARD, BuildingTypeEnum.RESIDENTIAL_BUILDING, BuildingTypeEnum.WAREHOUSE));
         databaseService.createInitialResearchStatus(account.getAccountId());
         return account;
     }

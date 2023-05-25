@@ -8,6 +8,7 @@ import de.neebs.spacepeoples.entity.BuildingType;
 import de.neebs.spacepeoples.entity.Galaxy;
 import de.neebs.spacepeoples.entity.Planet;
 import de.neebs.spacepeoples.entity.ResearchLevel;
+import de.neebs.spacepeoples.entity.ResourceType;
 import de.neebs.spacepeoples.entity.ShipPartType;
 import de.neebs.spacepeoples.entity.ShipType;
 import de.neebs.spacepeoples.integration.database.*;
@@ -114,6 +115,31 @@ public class SpacePeoplesController implements DefaultApi {
         IdContainer idContainer = getIdContainer(planetId);
         universeService.upgradeBuilding(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(buildingType.name()));
         return ResponseEntity.accepted().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> cancelBuildingRequest(String planetId, BuildingType buildingType) {
+        IdContainer idContainer = getIdContainer(planetId);
+        universeService.cancelBuildingRequest(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(buildingType.name()));
+        return DefaultApi.super.cancelBuildingRequest(planetId, buildingType);
+    }
+
+    @Override
+    public ResponseEntity<List<ResourceLevel>> retrieveResources(String planetId) {
+        IdContainer idContainer = getIdContainer(planetId);
+        return ResponseEntity.ok(universeService.retrieveResources(idContainer.getPlanetId()).stream().map(PlanetResource::toWeb).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResponseEntity<ResourceLevel> discardResources(String planetId, ResourceType resourceType, Integer units) {
+        IdContainer idContainer = getIdContainer(planetId);
+        return ResponseEntity.ok(universeService.discardResources(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.database.ResourceType.valueOf(resourceType.name()), units).toWeb());
+    }
+
+    @Override
+    public ResponseEntity<List<CapacityLevel>> retrievePlanetCapacities(String planetId) {
+        IdContainer idContainer = getIdContainer(planetId);
+        return ResponseEntity.ok(universeService.retrievePlanetCapacities(idContainer.getPlanetId()));
     }
 
     @Override

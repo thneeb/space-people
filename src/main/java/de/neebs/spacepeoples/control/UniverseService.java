@@ -1,5 +1,7 @@
 package de.neebs.spacepeoples.control;
 
+import de.neebs.spacepeoples.entity.CapacityLevel;
+import de.neebs.spacepeoples.entity.CapacityType;
 import de.neebs.spacepeoples.integration.database.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,12 @@ public class UniverseService {
     private final GalaxyRepository galaxyRepository;
 
     private final BuildingTypeRepository buildingTypeRepository;
+
+    private final PlanetCapacitySupplyRepository planetCapacitySupplyRepository;
+
+    private final PlanetCapacityUsedRepository planetCapacityUsedRepository;
+
+    private final PlanetRecycleResourceRepository planetRecycleResourceRepository;
 
     public List<Planet> retrievePlanets(String galaxyName) {
         List<Planet> list = StreamSupport.stream(planetRepository.findByUniverseName(galaxyName).spliterator(), false).collect(Collectors.toList());
@@ -96,10 +104,12 @@ public class UniverseService {
     }
 
     public void upgradeBuilding(String planetId, BuildingTypeEnum buildingType) {
+        // general check: building type exists in database.
         Optional<BuildingType> optionalBuildingType = buildingTypeRepository.findById(buildingType.name());
         if (optionalBuildingType.isEmpty()) {
             throw new IllegalArgumentException();
         }
+        // only one building can be upgraded / build at one time
         List<Building> buildings = retrieveBuildings(planetId);
         Optional<Building> optionalBuilding = buildings.stream().filter(f -> f.getBuildingType().equals(buildingType.name())).findAny();
         int level = optionalBuilding.map(Building::getLevel).orElse(0);
@@ -108,25 +118,37 @@ public class UniverseService {
                 throw new FacilityBusyException("Only one building can be build / upgraded at one time");
             }
         }
+        // find out level of the building yard
         int buildingYardLevel;
         Optional<Building> buildingYard = buildings.stream().filter(f -> "BUILDING_YARD".equals(f.getBuildingType())).findAny();
         if (buildingYard.isPresent()) {
             buildingYardLevel = buildingYard.get().getLevel();
         } else if (buildingType != BuildingTypeEnum.BUILDING_YARD) {
-            throw new BuildingNotAvailableException("Building Yard is need to build a building.");
+            throw new BuildingNotAvailableException("Building Yard is needed to build a building.");
         } else {
             buildingYardLevel = 0;
         }
+        // does the new building / upgrade fit into the available capacities
+        List<PlanetCapacitySupply> planetCapacitySupplies = StreamSupport.stream(planetCapacitySupplyRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        List<PlanetCapacityUsed> planetCapacityUsages = StreamSupport.stream(planetCapacityUsedRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        for (PlanetCapacityUsed used : planetCapacityUsages) {
+            Optional<PlanetCapacitySupply> optional = planetCapacitySupplies.stream().filter(f -> f.getCapacityType().equals(used.getCapacityType())).findAny();
+            if (optional.isPresent() && optional.get().getCapacitySupply() < used.getCapacityUsed()) {
+                throw new NotAffordableException("Too less " + used.getCapacityType() + " available");
+            }
+        }
+
+        // consume resources
         List<PlanetResource> resources = StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
         List<BuildingResourceCosts> costs = StreamSupport.stream(buildingResourceCostsRepository.findByBuildingType(buildingType.name()).spliterator(), false).collect(Collectors.toList());
         for (BuildingResourceCosts cost : costs) {
             Optional<PlanetResource> optional = resources.stream().filter(f -> f.getResourceType().equals(cost.getResourceType())).findAny();
             if (optional.isEmpty()) {
-                throw new NotAffordableException();
+                throw new NotAffordableException("No " + cost.getResourceType() + " available");
             }
             optional.get().setUnits((int)(optional.get().getUnits() - cost.getBasicValue() * Math.pow(cost.getBase(), level + cost.getExponentModifier())));
             if (optional.get().getUnits() < 0) {
-                throw new NotAffordableException();
+                throw new NotAffordableException("Too less " + cost.getResourceType() + " available");
             }
         }
         planetResourceRepository.saveAll(resources);
@@ -140,5 +162,95 @@ public class UniverseService {
         building.setLevel(level);
         building.setNextLevelUpdate(calendar.getTime());
         buildingRepository.save(building);
+    }
+
+    public PlanetResource discardResources(String planetId, ResourceType resourceType, Integer units) {
+        if (units == null || units < 1) {
+            throw new NotAffordableException("Wrong unit amount specified");
+        }
+        PlanetResourceId planetResourceId = new PlanetResourceId();
+        planetResourceId.setPlanetId(planetId);
+        planetResourceId.setResourceType(resourceType.name());
+        Optional<PlanetResource> optional = planetResourceRepository.findById(planetResourceId);
+        if (optional.isEmpty()) {
+            throw new NotAffordableException("No resources on planet.");
+        }
+        if (optional.get().getUnits() < units) {
+            throw new NotAffordableException("Too less resources on planet");
+        }
+        optional.get().setUnits(optional.get().getUnits() - units);
+        return planetResourceRepository.save(optional.get());
+    }
+
+    public Building cancelBuildingRequest(String planetId, BuildingTypeEnum buildingType) {
+        BuildingId buildingId = new BuildingId();
+        buildingId.setBuildingType(buildingType.name());
+        buildingId.setPlanetId(planetId);
+        Optional<Building> optionalBuilding = buildingRepository.findById(buildingId);
+        if (optionalBuilding.isEmpty()) {
+            throw new BuildingNotAvailableException("Building not available");
+        }
+        if (optionalBuilding.get().getNextLevelUpdate() == null) {
+            throw new BuildingNotAvailableException("No building request is ongoing");
+        }
+        PlanetCapacityId planetCapacityId = new PlanetCapacityId();
+        planetCapacityId.setPlanetId(planetId);
+        planetCapacityId.setCapacityType("RECYCLE");
+        Optional<PlanetCapacitySupply> optionalPlanetCapacitySupply = planetCapacitySupplyRepository.findById(planetCapacityId);
+        int capacitySupply;
+        if (optionalPlanetCapacitySupply.isEmpty()) {
+            capacitySupply = 0;
+        } else {
+            capacitySupply = optionalPlanetCapacitySupply.get().getCapacitySupply();
+        }
+        if (capacitySupply > 0) {
+            List<PlanetRecycleResource> recycleResources = StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+            int used = recycleResources.stream().mapToInt(PlanetRecycleResource::getUnits).sum();
+            List<BuildingResourceCosts> costs = StreamSupport.stream(buildingResourceCostsRepository.findByBuildingType(buildingType.name()).spliterator(), false).collect(Collectors.toList());
+            int recycleSum = (int)(costs.stream().mapToDouble(f -> (int) (f.getBasicValue() * Math.pow(f.getBase(), optionalBuilding.get().getLevel() + f.getExponentModifier()))).sum() * 0.75);
+            double fraction = Math.min(1, (double) (capacitySupply - used) / recycleSum);
+            for (BuildingResourceCosts cost : costs) {
+                Optional<PlanetRecycleResource> optional = recycleResources.stream().filter(f -> f.getResourceType().equals(cost.getResourceType())).findAny();
+                PlanetRecycleResource recycleResource;
+                if (optional.isEmpty()) {
+                    recycleResource = new PlanetRecycleResource();
+                    recycleResource.setPlanetId(planetId);
+                    recycleResource.setResourceType(cost.getResourceType());
+                    recycleResource.setUnits(0);
+                    recycleResources.add(recycleResource);
+                } else {
+                    recycleResource = optional.get();
+                }
+                recycleResource.setUnits(recycleResource.getUnits() + (int)(cost.getBasicValue() * Math.pow(cost.getBase(), optionalBuilding.get().getLevel() + cost.getExponentModifier()) * 0.75 * fraction));
+            }
+            planetRecycleResourceRepository.saveAll(recycleResources);
+        }
+        optionalBuilding.get().setNextLevelUpdate(null);
+        return buildingRepository.save(optionalBuilding.get());
+    }
+
+    public List<CapacityLevel> retrievePlanetCapacities(String planetId) {
+        List<PlanetCapacitySupply> suppliedCapacities = StreamSupport.stream(planetCapacitySupplyRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        List<PlanetCapacityUsed> usedCapacities = StreamSupport.stream(planetCapacityUsedRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        List<CapacityLevel> capacityLevels = new ArrayList<>();
+        for (PlanetCapacitySupply supply : suppliedCapacities) {
+            Optional<PlanetCapacityUsed> optional = usedCapacities.stream().filter(f -> f.getCapacityType().equals(supply.getCapacityType())).findAny();
+            CapacityLevel capacityLevel = new CapacityLevel();
+            capacityLevel.setCapacityType(CapacityType.fromValue(supply.getCapacityType()));
+            capacityLevel.setMaxUnits(supply.getCapacitySupply());
+            if ("STORAGE".equals(supply.getCapacityType())) {
+                capacityLevel.setActualUnits(StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToInt(PlanetResource::getUnits).sum());
+            } else if ("RECYCLE".equals(supply.getCapacityType())) {
+                capacityLevel.setActualUnits(StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToInt(PlanetRecycleResource::getUnits).sum());
+            } else {
+                if (optional.isEmpty()) {
+                    capacityLevel.setActualUnits(0);
+                } else {
+                    capacityLevel.setActualUnits(optional.get().getCapacityUsed());
+                }
+            }
+            capacityLevels.add(capacityLevel);
+        }
+        return capacityLevels;
     }
 }

@@ -133,8 +133,89 @@ paths:
       responses:
         '201':
           description: Level up confirmed
+        '409':
+          description: Building yard is still busy
+    delete:
+      operationId: cancelBuildingRequest
+      responses:
+        '204':
+          description: canceled building request
+        '404':
+          description: no building request found to be cancelled
+  /my/planets/{planetId}/resources:
+    parameters:
+      -
+        name: planetId
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrieveResources
+      responses:
+        '200':
+          description: Returns the resources on this planet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
+  /my/planets/{planetId}/resources/{resourceType}:
+    parameters:
+      -
+        name: planetId
+        in: path
+        schema:
+          type: string
+        required: true
+      -
+        name: resourceType
+        in: path
+        schema:
+          $ref: '#/components/schemas/ResourceType'
+        required: true
+    delete:
+      operationId: discardResources
+      parameters:
+        -
+          name: units
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          required: true
+      responses:
+        '200':
+          description: Resources successfully dropped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceLevel'
+        '406':
+          description: To few resources to discard
+  /my/planets/{planetId}/capacities:
+    parameters:
+      -
+        name: planetId
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrievePlanetCapacities
+      responses:
+        '200':
+          description: Returns the capacities of the specified planet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CapacityLevel'
   /my/ships:
     get:
+      operationId: retrieveShips
       responses:
         '200':
           content:
@@ -311,8 +392,8 @@ components:
           $ref: '#/components/schemas/Nickname'
     Nickname:
       type: string
-      minimum: 4
-      maximum: 80
+      minLength: 4
+      maxLength: 80
     PlanetDetails:
       required:
         - planet
@@ -364,8 +445,8 @@ components:
           maximum: 9
         orbit:
           type: string
-          minimum: 1
-          maximum: 1
+          minLength: 1
+          maxLength: 1
     Building:
       properties:
         buildingType:
@@ -433,6 +514,21 @@ components:
         nextLevelUpdate:
           type: string
           format: date-time
+    CapacityLevel:
+      properties:
+        capacityType:
+          $ref: '#/components/schemas/CapacityType'
+        maxUnits:
+          type: integer
+        actualUnits:
+          type: integer
+    CapacityType:
+      type: string
+      enum:
+        - STORAGE
+        - ENERGY
+        - RECYCLE
+        - RESIDENT
     BuildingType:
       type: string
       enum:
@@ -446,7 +542,9 @@ components:
         - FOUNTAIN
         - ELECTROLYSIS_PLANT
         - WAREHOUSE
+        - RECYCLING_FACILITY
         - SPACESHIP_FACTORY
+        - WEAPON_FACTORY
         - SPACESHIP_RESEARCH_FACILITY
     ShipPartType:
       type: string

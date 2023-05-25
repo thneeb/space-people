@@ -9,8 +9,8 @@ import java.io.Serializable;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class PlanetResourceId implements Serializable {
-    private String planetId;
+public class BuildingCapacitySupplyId implements Serializable {
+    private String buildingType;
 
-    private String resourceType;
+    private String capacityType;
 }

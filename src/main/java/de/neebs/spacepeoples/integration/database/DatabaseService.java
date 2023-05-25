@@ -27,12 +27,10 @@ public class DatabaseService {
     public int executeResourceProduction() {
         return jdbcTemplate.update("MERGE INTO planet_resource re\n" +
                 "USING (\n" +
-                "\tSELECT pr.planet_id, pr.resource_type,\n" +
-                "\t\tbrp.basic_value * pr.productivity / 100 * brp.base ^ (pb.level + brp.exponent_modifier)/ 3600 * EXTRACT(EPOCH FROM (NOW()-last_update)) AS additional_units, " +
-                "\t\tNOW() + interval '1 hour' * CEILING(brp.basic_value * pr.productivity / 100 * brp.base ^ (pb.level + brp.exponent_modifier) / 3600) / (brp.basic_value * pr.productivity / 100 * brp.base ^ (pb.level + brp.exponent_modifier)) AS next_update\n" +
-                "\tFROM planet_resource pr\n" +
-                "\tJOIN building_resource_production brp ON brp.resource_type = pr.resource_type\n" +
-                "\tJOIN planet_building pb ON brp.building_type = pb.building_type AND pr.planet_id = pb.planet_id\n" +
+                "SELECT prp.planet_id, prp.resource_type, LEAST(prp.additional_units, GREATEST(COALESCE(psa.capacity_supply, 0) - COALESCE(psu.storage_used), 0)) AS additional_units, prp.next_update\n" +
+                "FROM planet_resource_production prp\n" +
+                "LEFT JOIN planet_capacity_supply psa ON psa.planet_id = prp.planet_id AND psa.capacity_type = 'STORAGE'\n" +
+                "LEFT JOIN planet_storage_used psu ON psu.planet_id = prp.planet_id\n" +
                 ") pr ON (pr.planet_id = re.planet_id AND pr.resource_type = re.resource_type AND re.next_update <= NOW())\n" +
                 "WHEN MATCHED THEN\n" +
                 "UPDATE SET units = units + additional_units, next_update = pr.next_update, last_update = NOW()");
