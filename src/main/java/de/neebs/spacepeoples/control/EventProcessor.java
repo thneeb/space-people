@@ -11,11 +11,20 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EventProcessor {
     private final DatabaseService databaseService;
+
     @Scheduled(fixedRate = 1000)
     public void produceResources() {
         int resources = databaseService.executeResourceProduction();
         if (resources > 0) {
             log.debug("Updated resources: " + resources);
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void recycleResources() {
+        int resources = databaseService.executeResourceRecycling();
+        if (resources > 0) {
+            log.debug("Recycled resources: " + resources);
         }
     }
 

@@ -25,15 +25,33 @@ public class DatabaseService {
     }
 
     public int executeResourceProduction() {
-        return jdbcTemplate.update("MERGE INTO planet_resource re\n" +
-                "USING (\n" +
-                "SELECT prp.planet_id, prp.resource_type, LEAST(prp.additional_units, GREATEST(COALESCE(psa.capacity_supply, 0) - COALESCE(psu.storage_used), 0)) AS additional_units, prp.next_update\n" +
+        return jdbcTemplate.update("UPDATE planet_resource re\n" +
+                "SET units = units + LEAST(prp.additional_units, GREATEST(COALESCE(psa.capacity_supply, 0) - COALESCE(psu.storage_used), 0)), next_update = prp.next_update, last_update = NOW()\n" +
                 "FROM planet_resource_production prp\n" +
                 "LEFT JOIN planet_capacity_supply psa ON psa.planet_id = prp.planet_id AND psa.capacity_type = 'STORAGE'\n" +
                 "LEFT JOIN planet_storage_used psu ON psu.planet_id = prp.planet_id\n" +
-                ") pr ON (pr.planet_id = re.planet_id AND pr.resource_type = re.resource_type AND re.next_update <= NOW())\n" +
-                "WHEN MATCHED THEN\n" +
-                "UPDATE SET units = units + additional_units, next_update = pr.next_update, last_update = NOW()");
+                "WHERE prp.planet_id = re.planet_id\n" +
+                "AND prp.resource_type = re.resource_type \n" +
+                "AND COALESCE(re.next_update, NOW()) <= NOW()");
+    }
+
+    public int executeResourceRecycling() {
+        return jdbcTemplate.update("WITH resources AS (\n" +
+                "SELECT * FROM planet_resource_recycling\n" +
+                "), recycling AS (\n" +
+                "UPDATE planet_recycle_resource prr \n" +
+                "SET next_update = r.next_update, last_update = NOW(), units = units - r.additional_units\n" +
+                "FROM resources r\n" +
+                "WHERE COALESCE(prr.next_update, NOW()) <= NOW()\n" +
+                "AND r.planet_id = prr.planet_id\n" +
+                "AND r.resource_type = prr.resource_type\n" +
+                "RETURNING prr.planet_id, prr.resource_type, r.additional_units\n" +
+                ") \n" +
+                "UPDATE planet_resource pr\n" +
+                "SET units = units + rec.additional_units\n" +
+                "FROM recycling rec\n" +
+                "WHERE rec.planet_id = pr.planet_id\n" +
+                "AND rec.resource_type = pr.resource_type");
     }
 
     public int finishBuildings() {

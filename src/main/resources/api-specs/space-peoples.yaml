@@ -103,8 +103,12 @@ paths:
                 buildingType:
                   $ref: '#/components/schemas/BuildingType'
       responses:
-        '201':
+        '200':
           description: Triggered creation of a new building
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
   /my/planets/{planetId}/buildings/{buildingType}:
     parameters:
       -
@@ -131,15 +135,23 @@ paths:
     post:
       operationId: levelUpBuilding
       responses:
-        '201':
+        '200':
           description: Level up confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
         '409':
           description: Building yard is still busy
     delete:
       operationId: cancelBuildingRequest
       responses:
-        '204':
+        '200':
           description: canceled building request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
         '404':
           description: no building request found to be cancelled
   /my/planets/{planetId}/resources:
@@ -194,6 +206,56 @@ paths:
                 $ref: '#/components/schemas/ResourceLevel'
         '406':
           description: To few resources to discard
+  /my/planets/{planetId}/recyclables:
+    parameters:
+      -
+        name: planetId
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrieveRecyclables
+      responses:
+        '200':
+          description: Returns the recyclable resources on this planet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
+  /my/planets/{planetId}/recyclables/{resourceType}:
+    parameters:
+      -
+        name: planetId
+        in: path
+        schema:
+          type: string
+        required: true
+      -
+        name: resourceType
+        in: path
+        schema:
+          $ref: '#/components/schemas/ResourceType'
+        required: true
+    delete:
+      operationId: discardRecyclables
+      parameters:
+        -
+          name: units
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          required: true
+      responses:
+        '200':
+          description: Returns the new level of this recyclable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceLevel'
   /my/planets/{planetId}/capacities:
     parameters:
       -
@@ -399,6 +461,7 @@ components:
         - planet
         - buildings
         - resources
+        - capacities
       properties:
         planet:
           $ref: '#/components/schemas/Planet'
@@ -410,6 +473,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Building'
+        capacities:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapacityLevel'
     Planet:
       required:
         - id

@@ -103,7 +103,7 @@ public class UniverseService {
         return StreamSupport.stream(buildingRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
     }
 
-    public void upgradeBuilding(String planetId, BuildingTypeEnum buildingType) {
+    public Building upgradeBuilding(String planetId, BuildingTypeEnum buildingType) {
         // general check: building type exists in database.
         Optional<BuildingType> optionalBuildingType = buildingTypeRepository.findById(buildingType.name());
         if (optionalBuildingType.isEmpty()) {
@@ -161,7 +161,7 @@ public class UniverseService {
         building.setPlanetId(planetId);
         building.setLevel(level);
         building.setNextLevelUpdate(calendar.getTime());
-        buildingRepository.save(building);
+        return buildingRepository.save(building);
     }
 
     public PlanetResource discardResources(String planetId, ResourceType resourceType, Integer units) {
@@ -252,5 +252,27 @@ public class UniverseService {
             capacityLevels.add(capacityLevel);
         }
         return capacityLevels;
+    }
+
+    public List<PlanetRecycleResource> retrieveRecyclables(String planetId) {
+        return StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+    }
+
+    public PlanetRecycleResource discardRecyclables(String planetId, ResourceType resourceType, Integer units) {
+        if (units == null || units < 1) {
+            throw new NotAffordableException("Wrong unit amount specified");
+        }
+        PlanetResourceId planetResourceId = new PlanetResourceId();
+        planetResourceId.setPlanetId(planetId);
+        planetResourceId.setResourceType(resourceType.name());
+        Optional<PlanetRecycleResource> optional = planetRecycleResourceRepository.findById(planetResourceId);
+        if (optional.isEmpty()) {
+            throw new NotAffordableException("No recyclable on planet.");
+        }
+        if (optional.get().getUnits() < units) {
+            throw new NotAffordableException("Too less recyclables on planet");
+        }
+        optional.get().setUnits(optional.get().getUnits() - units);
+        return planetRecycleResourceRepository.save(optional.get());
     }
 }

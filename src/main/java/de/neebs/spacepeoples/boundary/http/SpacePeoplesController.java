@@ -75,7 +75,8 @@ public class SpacePeoplesController implements DefaultApi {
         Planet planet = universeService.retrievePlanet(idContainer.getPlanetId()).toWeb();
         List<Building> buildings = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().map(de.neebs.spacepeoples.integration.database.Building::toWeb).collect(Collectors.toList());
         List<ResourceLevel> resources = universeService.retrieveResources(idContainer.getPlanetId()).stream().map(PlanetResource::toWeb).collect(Collectors.toList());
-        PlanetDetails details = new PlanetDetails(planet, resources, buildings);
+        List<CapacityLevel> capacities = universeService.retrievePlanetCapacities(idContainer.getPlanetId());
+        PlanetDetails details = new PlanetDetails(planet, resources, buildings, capacities);
         return ResponseEntity.ok(details);
     }
 
@@ -103,25 +104,23 @@ public class SpacePeoplesController implements DefaultApi {
     }
 
     @Override
-    public ResponseEntity<Void> createBuilding(String planetId, CreateBuildingRequest request) {
+    public ResponseEntity<Building> createBuilding(String planetId, CreateBuildingRequest request) {
         IdContainer idContainer = getIdContainer(planetId);
-        universeService.upgradeBuilding(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(request.getBuildingType().name()));
+        Building building = universeService.upgradeBuilding(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(request.getBuildingType().name())).toWeb();
         URI uri = linkTo(methodOn(getClass()).retrieveBuilding(planetId, request.getBuildingType())).withSelfRel().toUri();
-        return ResponseEntity.created(uri).build();
+        return ResponseEntity.created(uri).body(building);
     }
 
     @Override
-    public ResponseEntity<Void> levelUpBuilding(String planetId, BuildingType buildingType) {
+    public ResponseEntity<Building> levelUpBuilding(String planetId, BuildingType buildingType) {
         IdContainer idContainer = getIdContainer(planetId);
-        universeService.upgradeBuilding(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(buildingType.name()));
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.ok(universeService.upgradeBuilding(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(buildingType.name())).toWeb());
     }
 
     @Override
-    public ResponseEntity<Void> cancelBuildingRequest(String planetId, BuildingType buildingType) {
+    public ResponseEntity<Building> cancelBuildingRequest(String planetId, BuildingType buildingType) {
         IdContainer idContainer = getIdContainer(planetId);
-        universeService.cancelBuildingRequest(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(buildingType.name()));
-        return DefaultApi.super.cancelBuildingRequest(planetId, buildingType);
+        return ResponseEntity.ok(universeService.cancelBuildingRequest(idContainer.getPlanetId(), BuildingTypeEnum.valueOf(buildingType.name())).toWeb());
     }
 
     @Override
@@ -134,6 +133,18 @@ public class SpacePeoplesController implements DefaultApi {
     public ResponseEntity<ResourceLevel> discardResources(String planetId, ResourceType resourceType, Integer units) {
         IdContainer idContainer = getIdContainer(planetId);
         return ResponseEntity.ok(universeService.discardResources(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.database.ResourceType.valueOf(resourceType.name()), units).toWeb());
+    }
+
+    @Override
+    public ResponseEntity<List<ResourceLevel>> retrieveRecyclables(String planetId) {
+        IdContainer idContainer = getIdContainer(planetId);
+        return ResponseEntity.ok(universeService.retrieveRecyclables(idContainer.getPlanetId()).stream().map(PlanetRecycleResource::toWeb).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResponseEntity<ResourceLevel> discardRecyclables(String planetId, ResourceType resourceType, Integer units) {
+        IdContainer idContainer = getIdContainer(planetId);
+        return ResponseEntity.ok(universeService.discardRecyclables(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.database.ResourceType.valueOf(resourceType.name()), units).toWeb());
     }
 
     @Override
