@@ -1,7 +1,8 @@
 package de.neebs.spacepeoples.control;
 
 import de.neebs.spacepeoples.entity.RegistrationRequest;
-import de.neebs.spacepeoples.integration.database.*;
+import de.neebs.spacepeoples.integration.jdbc.DatabaseService;
+import de.neebs.spacepeoples.integration.jpa.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;

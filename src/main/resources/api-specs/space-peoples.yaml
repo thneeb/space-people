@@ -195,6 +195,7 @@ paths:
           in: query
           schema:
             type: integer
+            format: int64
             minimum: 1
           required: true
       responses:
@@ -247,6 +248,7 @@ paths:
           in: query
           schema:
             type: integer
+            format: int64
             minimum: 1
           required: true
       responses:
@@ -287,6 +289,99 @@ paths:
                 items:
                   $ref: '#/components/schemas/Ship'
           description: Returns all owned ships
+    post:
+      operationId: createShip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ship'
+      responses:
+        '201':
+          description: creation of ship triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ship'
+  /my/fleets:
+    post:
+      operationId: createFleet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fleet'
+      responses:
+        '200':
+          description: Fleet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fleet'
+    get:
+      operationId: retrieveFleets
+      responses:
+        '200':
+          description: Returns all owned fleets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fleet'
+  /my/fleets/{nickname}:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrieveFleet
+      responses:
+        '200':
+          description: Returns details about the fleet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fleet'
+  /my/fleets/{nickname}/fuel:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrieveFleetFuel
+      responses:
+        '200':
+          description: Returns fuel details for the fleet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
+    post:
+      operationId: refuelFleet
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FuelLevel'
+      responses:
+        '200':
+          description: Fuel status of the fleet
+          content:
+            applcation/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
   /my/researchs:
     get:
       operationId: retrieveResearchLevels
@@ -309,18 +404,22 @@ paths:
                 planetId:
                   type: string
                 shipPart:
-                  $ref: '#/components/schemas/ShipPartType'
+                  $ref: '#/components/schemas/ResearchType'
       responses:
-        '201':
+        '200':
           description: Research command accepted
-  /my/researchs/{shipPartType}:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchLevel'
+  /my/researchs/{researchType}:
     parameters:
       -
-        name: shipPartType
+        name: researchType
         in: path
         required: true
         schema:
-          $ref: '#/components/schemas/ShipPartType'
+          $ref: '#/components/schemas/ResearchType'
     post:
       operationId: levelUpShipPartResearch
       requestBody:
@@ -331,8 +430,12 @@ paths:
                 planetId:
                   type: string
       responses:
-        '201':
+        '200':
           description: Research command accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchLevel'
   /my/ship-types:
     get:
       operationId: retrieveShipTypes
@@ -351,7 +454,30 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShipType'
+              properties:
+                planetId:
+                  type: string
+                shipType:
+                  $ref: '#/components/schemas/ShipType'
+      responses:
+        '200':
+          description: creates a new ship type with the given components
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipType'
+  /my/ship-types/preview:
+    post:
+      operationId: calculateShipType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                planetId:
+                  type: string
+                shipType:
+                  $ref: '#/components/schemas/ShipType'
       responses:
         '200':
           description: creates a new ship type with the given components
@@ -532,48 +658,119 @@ components:
           $ref: '#/components/schemas/ResourceType'
         units:
           type: integer
+          format: int64
+    Fleet:
+      properties:
+        nickname:
+          $ref: '#/components/schemas/Nickname'
+        planetId:
+          type: string
+        shipTypeCounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipTypeCount'
+        status:
+          type: string
+        cargo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+        recycling:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+        fuel:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+    ShipTypeCount:
+      properties:
+        shipType:
+          $ref: '#/components/schemas/Nickname'
+        count:
+          type: integer
     Ship:
       properties:
-        nickname:
+        shipType:
           $ref: '#/components/schemas/Nickname'
+        planetId:
+          type: string
+        fleetName:
+          $ref: '#/components/schemas/Nickname'
+        ready:
+          type: string
+          format: date-time
     ShipType:
+      required:
+        - nickname
+        - manned
+        - equipments
       properties:
         nickname:
           $ref: '#/components/schemas/Nickname'
+        manned:
+          type: boolean
         equipments:
           type: array
           items:
             $ref: '#/components/schemas/ShipPartLevel'
-        resources:
+        characteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/CharacteristicValue'
+        buildingCosts:
           type: array
           items:
             $ref: '#/components/schemas/ResourceLevel'
-        stability:
+        buildingTimeInSeconds:
           type: integer
-        fuel:
+          format: int64
+        researchCosts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
+        researchTimeInSeconds:
           type: integer
-        attack:
-          type: integer
-        armour:
-          type: integer
+          format: int64
         hydrogenConsumptionPerHour:
           type: integer
-        acceleration:
+          format: int64
+        oxygenConsumptionPerHour:
           type: integer
-        cargo:
-          type: integer
+          format: int64
+        ready:
+          type: string
+          format: date-time
     ShipPartLevel:
       required:
-        - shipPart
+        - researchType
       properties:
-        shipPart:
-          $ref: '#/components/schemas/ShipPartType'
+        researchType:
+          $ref: '#/components/schemas/ResearchType'
         level:
           type: integer
+    CharacteristicValue:
+      required:
+        - characteristic
+        - value
+      properties:
+        characteristic:
+          $ref: '#/components/schemas/Characteristic'
+        value:
+          type: integer
+          format: int64
+    FuelLevel:
+      properties:
+        percentage:
+          type: integer
+        absolut:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
     ResearchLevel:
       properties:
-        shipPart:
-          $ref: '#/components/schemas/ShipPartType'
+        researchType:
+          $ref: '#/components/schemas/ResearchType'
         level:
           type: integer
         planetId:
@@ -587,8 +784,10 @@ components:
           $ref: '#/components/schemas/CapacityType'
         maxUnits:
           type: integer
+          format: int64
         actualUnits:
           type: integer
+          format: int64
     CapacityType:
       type: string
       enum:
@@ -612,22 +811,29 @@ components:
         - RECYCLING_FACILITY
         - SPACESHIP_FACTORY
         - WEAPON_FACTORY
-        - SPACESHIP_RESEARCH_FACILITY
-    ShipPartType:
+        - RESEARCH_FACILITY
+    ResearchType:
       type: string
       enum:
         - BASIC_UNIT
-        - LASER
-        - INVASION_UNIT
-        - COLONISATION_UNIT
         - CARGO_MODULE
         - FUEL_TANK
-        - BOUNTY_UNIT
-        - ENGINE
-        - MINERAL_PROCESSOR
-        - SCANNER
         - SHIELD
         - ARMOUR
+        - COMBUSTION_DRIVE
+        - FUSION_DRIVE
+        - TIME_WARP_DRIVE
+        - ROCKET
+        - LASER
+        - PLASMA
+        - SPY_UNIT
+        - CAMOUFLAGE_UNIT
+        - COLONISATION_UNIT
+        - INVASION_UNIT
+        - RECYCLING_UNIT
+        - BOUNTY_UNIT
+        - SABOTAGE_UNIT
+        - MINERAL_PROCESSOR
     ResourceType:
       type: string
       enum:
@@ -641,3 +847,13 @@ components:
         - DIAMONDS
         - SILVER
         - GOLD
+    Characteristic:
+      type: string
+      enum:
+        - STABILITY
+        - ACCELERATION
+        - WARP
+        - FUEL
+        - CARGO
+        - ATTACK
+        - DEFENSE

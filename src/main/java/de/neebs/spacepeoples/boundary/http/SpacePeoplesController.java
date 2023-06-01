@@ -2,18 +2,21 @@ package de.neebs.spacepeoples.boundary.http;
 
 import de.neebs.spacepeoples.control.*;
 import de.neebs.spacepeoples.controller.http.DefaultApi;
-import de.neebs.spacepeoples.entity.*;
 import de.neebs.spacepeoples.entity.Building;
 import de.neebs.spacepeoples.entity.BuildingType;
+import de.neebs.spacepeoples.entity.Fleet;
 import de.neebs.spacepeoples.entity.Galaxy;
 import de.neebs.spacepeoples.entity.Planet;
 import de.neebs.spacepeoples.entity.ResearchLevel;
+import de.neebs.spacepeoples.entity.ResearchType;
 import de.neebs.spacepeoples.entity.ResourceType;
-import de.neebs.spacepeoples.entity.ShipPartType;
+import de.neebs.spacepeoples.entity.Ship;
 import de.neebs.spacepeoples.entity.ShipType;
-import de.neebs.spacepeoples.integration.database.*;
+import de.neebs.spacepeoples.entity.*;
+import de.neebs.spacepeoples.integration.jpa.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,7 +44,13 @@ public class SpacePeoplesController implements DefaultApi {
 
     private final UniverseService universeService;
 
+    private final ResearchService researchService;
+
     private final ShipService shipService;
+
+    private final FleetService fleetService;
+
+    private final TypeConverter typeConverter;
 
     @Override
     public ResponseEntity<TokenBody> token() {
@@ -65,7 +74,7 @@ public class SpacePeoplesController implements DefaultApi {
     @Override
     public ResponseEntity<List<Planet>> retrieveMyPlanets() {
         String accountId = getAccountId();
-        List<Planet> list = universeService.retrievePlanetsByAccountId(accountId).stream().map(de.neebs.spacepeoples.integration.database.Planet::toWeb).collect(Collectors.toList());
+        List<Planet> list = universeService.retrievePlanetsByAccountId(accountId).stream().map(de.neebs.spacepeoples.integration.jpa.Planet::toWeb).collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
 
@@ -73,7 +82,7 @@ public class SpacePeoplesController implements DefaultApi {
     public ResponseEntity<PlanetDetails> retrieveMyPlanetDetails(String planetId) {
         IdContainer idContainer = getIdContainer(planetId);
         Planet planet = universeService.retrievePlanet(idContainer.getPlanetId()).toWeb();
-        List<Building> buildings = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().map(de.neebs.spacepeoples.integration.database.Building::toWeb).collect(Collectors.toList());
+        List<Building> buildings = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().map(de.neebs.spacepeoples.integration.jpa.Building::toWeb).collect(Collectors.toList());
         List<ResourceLevel> resources = universeService.retrieveResources(idContainer.getPlanetId()).stream().map(PlanetResource::toWeb).collect(Collectors.toList());
         List<CapacityLevel> capacities = universeService.retrievePlanetCapacities(idContainer.getPlanetId());
         PlanetDetails details = new PlanetDetails(planet, resources, buildings, capacities);
@@ -82,21 +91,21 @@ public class SpacePeoplesController implements DefaultApi {
 
     @Override
     public ResponseEntity<List<Planet>> retrievePlanets(String universeName) {
-        List<Planet> planets = universeService.retrievePlanets(universeName).stream().map(de.neebs.spacepeoples.integration.database.Planet::toWeb).collect(Collectors.toList());
+        List<Planet> planets = universeService.retrievePlanets(universeName).stream().map(de.neebs.spacepeoples.integration.jpa.Planet::toWeb).collect(Collectors.toList());
         return ResponseEntity.ok(planets);
     }
 
     @Override
     public ResponseEntity<List<Building>> retrievePlanetBuildings(String planetId) {
         IdContainer idContainer = getIdContainer(planetId);
-        List<Building> buildings = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().map(de.neebs.spacepeoples.integration.database.Building::toWeb).collect(Collectors.toList());
+        List<Building> buildings = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().map(de.neebs.spacepeoples.integration.jpa.Building::toWeb).collect(Collectors.toList());
         return ResponseEntity.ok(buildings);
     }
 
     @Override
     public ResponseEntity<Building> retrieveBuilding(String planetId, BuildingType buildingType) {
         IdContainer idContainer = getIdContainer(planetId);
-        Optional<de.neebs.spacepeoples.integration.database.Building> optional = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().filter(f -> f.getBuildingType().equals(buildingType.name())).findAny();
+        Optional<de.neebs.spacepeoples.integration.jpa.Building> optional = universeService.retrieveBuildings(idContainer.getPlanetId()).stream().filter(f -> f.getBuildingType().equals(buildingType.name())).findAny();
         if (optional.isEmpty()) {
             throw new BuildingNotAvailableException("Requested building is not available at this planet.");
         }
@@ -130,9 +139,9 @@ public class SpacePeoplesController implements DefaultApi {
     }
 
     @Override
-    public ResponseEntity<ResourceLevel> discardResources(String planetId, ResourceType resourceType, Integer units) {
+    public ResponseEntity<ResourceLevel> discardResources(String planetId, ResourceType resourceType, Long units) {
         IdContainer idContainer = getIdContainer(planetId);
-        return ResponseEntity.ok(universeService.discardResources(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.database.ResourceType.valueOf(resourceType.name()), units).toWeb());
+        return ResponseEntity.ok(universeService.discardResources(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.jpa.ResourceType.valueOf(resourceType.name()), units).toWeb());
     }
 
     @Override
@@ -142,9 +151,9 @@ public class SpacePeoplesController implements DefaultApi {
     }
 
     @Override
-    public ResponseEntity<ResourceLevel> discardRecyclables(String planetId, ResourceType resourceType, Integer units) {
+    public ResponseEntity<ResourceLevel> discardRecyclables(String planetId, ResourceType resourceType, Long units) {
         IdContainer idContainer = getIdContainer(planetId);
-        return ResponseEntity.ok(universeService.discardRecyclables(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.database.ResourceType.valueOf(resourceType.name()), units).toWeb());
+        return ResponseEntity.ok(universeService.discardRecyclables(idContainer.getPlanetId(), de.neebs.spacepeoples.integration.jpa.ResourceType.valueOf(resourceType.name()), units).toWeb());
     }
 
     @Override
@@ -156,33 +165,68 @@ public class SpacePeoplesController implements DefaultApi {
     @Override
     public ResponseEntity<List<ResearchLevel>> retrieveResearchLevels() {
         String accountId = getAccountId();
-        return ResponseEntity.ok(shipService.retrieveResearchLevels(accountId).stream().map(de.neebs.spacepeoples.integration.database.ResearchLevel::toWeb).collect(Collectors.toList()));
+        return ResponseEntity.ok(researchService.retrieveResearchLevels(accountId).stream().map(de.neebs.spacepeoples.integration.jpa.ResearchLevel::toWeb).collect(Collectors.toList()));
     }
 
     @Override
-    public ResponseEntity<Void> startShipPartResearch(StartShipPartResearchRequest startShipPartResearchRequest) {
+    public ResponseEntity<ResearchLevel> startShipPartResearch(StartShipPartResearchRequest startShipPartResearchRequest) {
         IdContainer idContainer = getIdContainer(startShipPartResearchRequest.getPlanetId());
-        shipService.upgradeShipPart(startShipPartResearchRequest.getShipPart().name(), idContainer.getPlanetId());
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.ok(researchService.upgradeResearch(startShipPartResearchRequest.getShipPart().name(), idContainer.getAccountId(), idContainer.getPlanetId()).toWeb());
     }
 
     @Override
-    public ResponseEntity<Void> levelUpShipPartResearch(ShipPartType shipPartType, LevelUpShipPartResearchRequest request) {
+    public ResponseEntity<ResearchLevel> levelUpShipPartResearch(ResearchType researchType, LevelUpShipPartResearchRequest request) {
         IdContainer idContainer = getIdContainer(request.getPlanetId());
-        shipService.upgradeShipPart(shipPartType.name(), idContainer.getPlanetId());
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.ok(researchService.upgradeResearch(researchType.name(), idContainer.getAccountId(), idContainer.getPlanetId()).toWeb());
     }
 
     @Override
     public ResponseEntity<List<ShipType>> retrieveShipTypes() {
         String accountId = getAccountId();
-        return ResponseEntity.ok(shipService.retrieveShipTypes(accountId).stream().map(FullShipType::toWeb).collect(Collectors.toList()));
+        return ResponseEntity.ok(researchService.retrieveShipTypes(accountId).stream().map(FullShipType::toWeb).collect(Collectors.toList()));
     }
 
     @Override
-    public ResponseEntity<ShipType> createShipType(ShipType shipType) {
+    public ResponseEntity<ShipType> createShipType(CreateShipTypeRequest request) {
+        IdContainer idContainer = getIdContainer(request.getPlanetId());
+        return ResponseEntity.ok(researchService.createShipType(idContainer.getAccountId(), idContainer.getPlanetId(), request.getShipType().getNickname(), request.getShipType().getManned(), request.getShipType().getEquipments().stream().map(f -> new ShipTypeEquipment(f.getResearchType().name(), f.getLevel())).collect(Collectors.toList())).toWeb());
+    }
+
+    @Override
+    public ResponseEntity<ShipType> calculateShipType(CreateShipTypeRequest request) {
+        IdContainer idContainer = getIdContainer(request.getPlanetId());
+        return ResponseEntity.ok(researchService.evaluateShipType(idContainer.getAccountId(), idContainer.getPlanetId(), request.getShipType().getManned(), request.getShipType().getEquipments().stream().map(f -> new ShipTypeEquipment(f.getResearchType().name(), f.getLevel())).collect(Collectors.toList())).toWeb());
+    }
+
+    @Override
+    public ResponseEntity<List<Ship>> retrieveShips() {
         String accountId = getAccountId();
-        return ResponseEntity.ok(shipService.createShipType(accountId, shipType.getNickname(), shipType.getEquipments().stream().map(f -> new ShipTypeEquipment(f.getShipPart().name(), f.getLevel())).collect(Collectors.toList())).toWeb());
+        return ResponseEntity.ok(typeConverter.convert(shipService.retrieveShips(accountId)));
+    }
+
+    @Override
+    public ResponseEntity<Ship> createShip(Ship ship) {
+        IdContainer idContainer = getIdContainer(ship.getPlanetId());
+        return ResponseEntity.ok(typeConverter.convert(shipService.createShip(idContainer.getAccountId(), ship.getShipType(), idContainer.getPlanetId())));
+    }
+
+    @Override
+    public ResponseEntity<Fleet> createFleet(Fleet fleet) {
+        IdContainer idContainer= getIdContainer(fleet.getPlanetId());
+        fleetService.createFleet(fleet.getNickname(), idContainer.getAccountId(), idContainer.getPlanetId(), fleet.getShipTypeCounts().stream().collect(Collectors.toMap(ShipTypeCount::getShipType, ShipTypeCount::getCount)));
+        return ResponseEntity.ok(fleet);
+    }
+
+    @Override
+    public ResponseEntity<List<ResourceLevel>> retrieveFleetFuel(String nickname) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok(fleetService.retrieveFleetFuel(accountId, nickname).stream().map(FleetFuel::toWeb).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResponseEntity<List<ResourceLevel>> refuelFleet(String nickname, FuelLevel fuelLevel) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fleetService.refuelFleet(accountId, nickname).stream().map(FleetFuel::toWeb).collect(Collectors.toList()));
     }
 
     private IdContainer getIdContainer(String planetId) {

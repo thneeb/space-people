@@ -1,0 +1,18 @@
+package de.neebs.spacepeoples.integration.jpa;
+
+public enum BuildingTypeEnum {
+    BUILDING_YARD,
+    SPACEPORT,
+    RESIDENTIAL_BUILDING,
+    SOLAR_PARK,
+    RECYCLING_FACILITY,
+    IRON_MINE,
+    SILICON_MINE,
+    CARBON_MINE,
+    FOUNTAIN,
+    ELECTROLYSIS_PLANT,
+    WAREHOUSE,
+    SPACESHIP_FACTORY,
+    WEAPON_FACTORY,
+    RESEARCH_FACILITY
+}

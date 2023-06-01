@@ -11,4 +11,4 @@ INSERT INTO building_type(building_type, name, duration_in_seconds, level_base, 
 INSERT INTO building_type(building_type, name, duration_in_seconds, level_base, building_yard_base) VALUES ('RECYCLING_FACILITY', 'Recycling Facility', 19600, 1.11, 0.91);
 INSERT INTO building_type(building_type, name, duration_in_seconds, level_base, building_yard_base) VALUES ('SPACESHIP_FACTORY', 'Spaceship Factory', 43200, 1.11, 0.91);
 INSERT INTO building_type(building_type, name, duration_in_seconds, level_base, building_yard_base) VALUES ('WEAPON_FACTORY', 'Weapon Factory', 43200, 1.11, 0.91);
-INSERT INTO building_type(building_type, name, duration_in_seconds, level_base, building_yard_base) VALUES ('SPACESHIP_RESEARCH_FACILITY', 'Spaceship Research Facility', 43200, 1.11, 0.91);
+INSERT INTO building_type(building_type, name, duration_in_seconds, level_base, building_yard_base) VALUES ('RESEARCH_FACILITY', 'Research Facility', 43200, 1.11, 0.91);

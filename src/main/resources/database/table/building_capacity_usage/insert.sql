@@ -20,5 +20,5 @@ INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, b
 INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('RECYCLING_FACILITY', 'ENERGY', 400, 1.09, -0.545);
 INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('SPACESHIP_FACTORY', 'RESIDENT', 12, 1.09, -0.545);
 INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('SPACESHIP_FACTORY', 'ENERGY', 300, 1.09, -0.545);
-INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('SPACESHIP_RESEARCH_FACILITY', 'RESIDENT', 15, 1.09, -0.545);
-INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('SPACESHIP_RESEARCH_FACILITY', 'ENERGY', 150, 1.09, -0.545);
+INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('RESEARCH_FACILITY', 'RESIDENT', 15, 1.09, -0.545);
+INSERT INTO building_capacity_usage(building_type, capacity_type, basic_value, base, exponent_modifier) VALUES ('RESEARCH_FACILITY', 'ENERGY', 150, 1.09, -0.545);

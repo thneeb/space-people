@@ -2,7 +2,7 @@ package de.neebs.spacepeoples.control;
 
 import de.neebs.spacepeoples.entity.CapacityLevel;
 import de.neebs.spacepeoples.entity.CapacityType;
-import de.neebs.spacepeoples.integration.database.*;
+import de.neebs.spacepeoples.integration.jpa.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -164,7 +164,7 @@ public class UniverseService {
         return buildingRepository.save(building);
     }
 
-    public PlanetResource discardResources(String planetId, ResourceType resourceType, Integer units) {
+    public PlanetResource discardResources(String planetId, ResourceType resourceType, Long units) {
         if (units == null || units < 1) {
             throw new NotAffordableException("Wrong unit amount specified");
         }
@@ -197,7 +197,7 @@ public class UniverseService {
         planetCapacityId.setPlanetId(planetId);
         planetCapacityId.setCapacityType("RECYCLE");
         Optional<PlanetCapacitySupply> optionalPlanetCapacitySupply = planetCapacitySupplyRepository.findById(planetCapacityId);
-        int capacitySupply;
+        long capacitySupply;
         if (optionalPlanetCapacitySupply.isEmpty()) {
             capacitySupply = 0;
         } else {
@@ -205,7 +205,7 @@ public class UniverseService {
         }
         if (capacitySupply > 0) {
             List<PlanetRecycleResource> recycleResources = StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-            int used = recycleResources.stream().mapToInt(PlanetRecycleResource::getUnits).sum();
+            long used = recycleResources.stream().mapToLong(PlanetRecycleResource::getUnits).sum();
             List<BuildingResourceCosts> costs = StreamSupport.stream(buildingResourceCostsRepository.findByBuildingType(buildingType.name()).spliterator(), false).collect(Collectors.toList());
             int recycleSum = (int)(costs.stream().mapToDouble(f -> (int) (f.getBasicValue() * Math.pow(f.getBase(), optionalBuilding.get().getLevel() + f.getExponentModifier()))).sum() * 0.75);
             double fraction = Math.min(1, (double) (capacitySupply - used) / recycleSum);
@@ -217,6 +217,7 @@ public class UniverseService {
                     recycleResource.setPlanetId(planetId);
                     recycleResource.setResourceType(cost.getResourceType());
                     recycleResource.setUnits(0);
+                    recycleResource.setLastUpdate(new Date());
                     recycleResources.add(recycleResource);
                 } else {
                     recycleResource = optional.get();
@@ -239,12 +240,12 @@ public class UniverseService {
             capacityLevel.setCapacityType(CapacityType.fromValue(supply.getCapacityType()));
             capacityLevel.setMaxUnits(supply.getCapacitySupply());
             if ("STORAGE".equals(supply.getCapacityType())) {
-                capacityLevel.setActualUnits(StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToInt(PlanetResource::getUnits).sum());
+                capacityLevel.setActualUnits(StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToLong(PlanetResource::getUnits).sum());
             } else if ("RECYCLE".equals(supply.getCapacityType())) {
-                capacityLevel.setActualUnits(StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToInt(PlanetRecycleResource::getUnits).sum());
+                capacityLevel.setActualUnits(StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToLong(PlanetRecycleResource::getUnits).sum());
             } else {
                 if (optional.isEmpty()) {
-                    capacityLevel.setActualUnits(0);
+                    capacityLevel.setActualUnits(0L);
                 } else {
                     capacityLevel.setActualUnits(optional.get().getCapacityUsed());
                 }
@@ -258,7 +259,7 @@ public class UniverseService {
         return StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
     }
 
-    public PlanetRecycleResource discardRecyclables(String planetId, ResourceType resourceType, Integer units) {
+    public PlanetRecycleResource discardRecyclables(String planetId, ResourceType resourceType, Long units) {
         if (units == null || units < 1) {
             throw new NotAffordableException("Wrong unit amount specified");
         }

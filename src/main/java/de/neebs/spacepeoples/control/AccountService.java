@@ -1,8 +1,8 @@
 package de.neebs.spacepeoples.control;
 
 import de.neebs.spacepeoples.entity.Agent;
-import de.neebs.spacepeoples.integration.database.Account;
-import de.neebs.spacepeoples.integration.database.AccountRepository;
+import de.neebs.spacepeoples.integration.jpa.Account;
+import de.neebs.spacepeoples.integration.jpa.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

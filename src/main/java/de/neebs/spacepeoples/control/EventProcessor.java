@@ -1,6 +1,6 @@
 package de.neebs.spacepeoples.control;
 
-import de.neebs.spacepeoples.integration.database.DatabaseService;
+import de.neebs.spacepeoples.integration.jdbc.DatabaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,10 +37,26 @@ public class EventProcessor {
     }
 
     @Scheduled(fixedRate = 1000)
-    public void finishResearch() {
+    public void finishResearches() {
         int finishedResearches = databaseService.finishResearches();
         if (finishedResearches > 0) {
             log.debug("Finished researches: " + finishedResearches);
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void finishShipTypes() {
+        int finished = databaseService.finishShipTypes();
+        if (finished > 0) {
+            log.debug("Finished shipTypes: " + finished);
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void finishShips() {
+        int finished = databaseService.finishShips();
+        if (finished > 0) {
+            log.debug("Finished ships: " + finished);
         }
     }
 }

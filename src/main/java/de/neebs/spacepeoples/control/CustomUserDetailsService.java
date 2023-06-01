@@ -1,7 +1,7 @@
 package de.neebs.spacepeoples.control;
 
-import de.neebs.spacepeoples.integration.database.Account;
-import de.neebs.spacepeoples.integration.database.AccountRepository;
+import de.neebs.spacepeoples.integration.jpa.Account;
+import de.neebs.spacepeoples.integration.jpa.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

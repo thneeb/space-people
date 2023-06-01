@@ -1,11 +1,11 @@
 package de.neebs.spacepeoples.control;
 
-import de.neebs.spacepeoples.integration.database.*;
+import de.neebs.spacepeoples.integration.jdbc.DatabaseService;
+import de.neebs.spacepeoples.integration.jpa.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;

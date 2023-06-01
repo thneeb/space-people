@@ -1,0 +1,17 @@
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('CARGO_MODULE', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('FUEL_TANK', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('ARMOUR', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('COMBUSTION_DRIVE', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('FUSION_DRIVE', 'COMBUSTION_DRIVE', 15);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('TIME_WARP_DRIVE', 'FUSION_DRIVE', 15);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('LASER', 'ROCKET', 15);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('PLASMA', 'ROCKET', 25);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('PLASMA', 'LASER', 15);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('CAMOUFLAGE_UNIT', 'SPY_UNIT', 10);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('COLONISATION_UNIT', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('INVASION_UNIT', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('INVASION_UNIT', 'PLASMA', 5);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('RECYCLING_UNIT', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('BOUNTY_UNIT', 'CAMOUFLAGE_UNIT', 5);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('SABOTAGE_UNIT', 'BASIC_UNIT', 1);
+INSERT INTO research_type_research_prerequisite (research_type, prerequisite, level) VALUES ('SABOTAGE_UNIT', 'PLASMA', 20);
