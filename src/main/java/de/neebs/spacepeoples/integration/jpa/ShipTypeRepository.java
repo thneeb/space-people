@@ -5,11 +5,12 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ShipTypeRepository extends CrudRepository<ShipType, String> {
-    Iterable<ShipType> findByAccountId(String accountId);
+    List<ShipType> findByAccountId(String accountId);
 
     Optional<ShipType> findByPlanetId(String planetId);
 
@@ -17,5 +18,5 @@ public interface ShipTypeRepository extends CrudRepository<ShipType, String> {
 
     @Query("SELECT st.nickname AS shipType, COUNT(s) AS count FROM ShipType st JOIN Ship s ON s.shipTypeId = st.shipTypeId " +
             "WHERE s.ready IS NULL AND s.fleetId IS NULL AND s.accountId = :accountId AND s.planetId = :planetId GROUP by st.nickname")
-    Iterable<ShipTypeAvailability> countShipsByShipType(String accountId, String planetId);
+    List<ShipTypeAvailability> countShipsByShipType(String accountId, String planetId);
 }

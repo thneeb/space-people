@@ -27,24 +27,26 @@ public class ShipService {
 
     private final ShipRepository shipRepository;
 
-    public Ship createShip(String accountId, String shipType, String planetId) {
-        Optional<ShipType> optionalShipType = shipTypeRepository.findByAccountIdAndNickname(accountId, shipType);
-        if (optionalShipType.isEmpty()) {
+    public Ship createShip(String accountId, String shipTypeName, String planetId) {
+        ShipType shipType = shipTypeRepository.findByAccountIdAndNickname(accountId, shipTypeName).orElseThrow(UnknownShipTypeException::new);
+        if (shipType.getReady() != null) {
             throw new UnknownShipTypeException();
         }
-        if (optionalShipType.get().getReady() != null) {
-            throw new UnknownShipTypeException();
-        }
-        List<Building> buildings = StreamSupport.stream(buildingRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-        Optional<Building> spaceShipFactory = buildings.stream().filter(f -> f.getBuildingType().equals(BuildingTypeEnum.SPACESHIP_FACTORY.name())).findAny();
-        if (spaceShipFactory.isEmpty() || spaceShipFactory.get().getLevel() == 0) {
+        List<Building> buildings = buildingRepository.findByPlanetId(planetId);
+        Building spaceShipFactory = buildings.stream().filter(f -> f.getBuildingType().equals(BuildingTypeEnum.SPACESHIP_FACTORY.name())).findAny().orElseThrow(() -> new BuildingNotAvailableException("We need a " + BuildingTypeEnum.SPACESHIP_FACTORY));
+        if (spaceShipFactory.getLevel() == 0) {
             throw new BuildingNotAvailableException("We need a " + BuildingTypeEnum.SPACESHIP_FACTORY);
         }
-        if (shipRepository.findByPlanetIdAndReadyIsNotNull(planetId).isPresent()) {
-            throw new FacilityBusyException(BuildingTypeEnum.SPACESHIP_FACTORY + " is busy");
+        Optional<Ship> optionalShip = shipRepository.findByPlanetIdAndReadyIsNotNull(planetId);
+        if (optionalShip.isPresent()) {
+            if (optionalShip.get().getShipTypeId().equals(shipType.getShipTypeId())) {
+                return optionalShip.get();
+            } else {
+                throw new FacilityBusyException(BuildingTypeEnum.SPACESHIP_FACTORY + " is busy");
+            }
         }
-        List<PlanetResource> planetResources = StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-        List<ShipTypeResourceCosts> shipTypeResourceCosts = StreamSupport.stream(shipTypeResourceCostsRepository.findByShipTypeId(optionalShipType.get().getShipTypeId()).spliterator(), false).collect(Collectors.toList());
+        List<PlanetResource> planetResources = planetResourceRepository.findByPlanetId(planetId);
+        List<ShipTypeResourceCosts> shipTypeResourceCosts = shipTypeResourceCostsRepository.findByShipTypeId(shipType.getShipTypeId());
         for (ShipTypeResourceCosts costs : shipTypeResourceCosts) {
             Optional<PlanetResource> optionalPlanetResource = planetResources.stream().filter(f -> f.getResourceType().equals(costs.getResourceType())).findAny();
             if (optionalPlanetResource.isEmpty()) {
@@ -56,14 +58,14 @@ public class ShipService {
             }
         }
         List<ResearchType> researchTypes = StreamSupport.stream(researchTypeRepository.findAll().spliterator(), false).collect(Collectors.toList());
-        List<ShipTypeEquipment> shipTypeEquipments = StreamSupport.stream(shipTypeEquipmentRepository.findAllByShipTypeId(optionalShipType.get().getShipTypeId()).spliterator(), false).collect(Collectors.toList());
+        List<ShipTypeEquipment> shipTypeEquipments = shipTypeEquipmentRepository.findAllByShipTypeId(shipType.getShipTypeId());
         int time = 0;
         for (ShipTypeEquipment equipment : shipTypeEquipments) {
             Optional<ResearchType> optionalResearchType = researchTypes.stream().filter(f -> f.getResearchType().equals(equipment.getResearchType())).findAny();
             if (optionalResearchType.isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            time += optionalResearchType.get().getBuildingInSeconds() * Math.pow(optionalResearchType.get().getDurationLevelBase(), equipment.getLevel()) * Math.pow(optionalResearchType.get().getFacilityBase(), spaceShipFactory.get().getLevel());
+            time += optionalResearchType.get().getBuildingInSeconds() * Math.pow(optionalResearchType.get().getDurationLevelBase(), equipment.getLevel()) * Math.pow(optionalResearchType.get().getFacilityBase(), spaceShipFactory.getLevel());
         }
 
         Calendar calendar = GregorianCalendar.getInstance();
@@ -71,7 +73,7 @@ public class ShipService {
 
         Ship ship = new Ship();
         ship.setShipId(UUID.randomUUID().toString());
-        ship.setShipTypeId(optionalShipType.get().getShipTypeId());
+        ship.setShipTypeId(shipType.getShipTypeId());
         ship.setAccountId(accountId);
         ship.setFleetId(null);
         ship.setPlanetId(planetId);
@@ -80,6 +82,6 @@ public class ShipService {
     }
 
     public List<Ship> retrieveShips(String accountId) {
-        return StreamSupport.stream(shipRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
+        return shipRepository.findByAccountId(accountId);
     }
 }

@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface PlanetRecycleResourceRepository extends CrudRepository<PlanetRecycleResource, PlanetResourceId> {
-    List<PlanetRecycleResource> findByPlanetId(String planetId);
+public interface FleetResourceRepository extends CrudRepository<FleetResource, FleetResourceId> {
+    List<FleetResource> findByFleetId(String fleetId);
 }

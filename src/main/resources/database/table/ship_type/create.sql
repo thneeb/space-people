@@ -3,8 +3,6 @@ CREATE TABLE ship_type (
     account_id VARCHAR(40) NOT NULL,
     nickname VARCHAR(80) NOT NULL,
     manned INT2 NOT NULL,
-    hydrogen_consumption_per_hour INT8 NOT NULL,
-    oxygen_consumption_per_hour INT8 NOT NULL,
     planet_id VARCHAR(40),
     ready TIMESTAMP,
     PRIMARY KEY (ship_type_id),

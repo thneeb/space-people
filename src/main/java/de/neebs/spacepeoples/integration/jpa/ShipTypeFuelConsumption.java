@@ -11,15 +11,15 @@ import javax.persistence.*;
 
 @Getter
 @Setter
+@Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "FLEET_FUEL")
-@IdClass(FleetResourceId.class)
-public class FleetFuel {
+@Table(name = "SHIP_TYPE_FUEL_CONSUMPTION")
+@IdClass(ShipTypeResourceId.class)
+public class ShipTypeFuelConsumption {
     @Id
-    @Column(name = "FLEET_ID")
-    private String fleetId;
+    @Column(name = "SHIP_TYPE_ID")
+    private String shipTypeId;
 
     @Id
     @Column(name = "RESOURCE_TYPE")

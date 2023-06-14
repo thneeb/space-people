@@ -4,6 +4,7 @@ CREATE TABLE fleet (
     account_id VARCHAR(40) NOT NULL,
     fleet_status VARCHAR(40) NOT NULL,
     planet_id VARCHAR(40) NOT NULL,
+    next_status_update TIMESTAMP,
     PRIMARY KEY (fleet_id),
     UNIQUE (nickname, account_id),
     FOREIGN KEY (account_id) REFERENCES account(account_id),

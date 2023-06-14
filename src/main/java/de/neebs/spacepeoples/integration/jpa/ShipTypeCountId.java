@@ -9,8 +9,8 @@ import java.io.Serializable;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class ShipTypeResourceCostsId implements Serializable {
-    private String shipTypeId;
+public class ShipTypeCountId implements Serializable {
+    private String fleetId;
 
-    private String resourceType;
+    private String nickname;
 }

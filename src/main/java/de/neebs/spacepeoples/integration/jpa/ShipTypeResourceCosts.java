@@ -11,7 +11,7 @@ import javax.persistence.*;
 @Setter
 @Entity
 @Table(name = "SHIP_TYPE_RESOURCE_COSTS")
-@IdClass(ShipTypeResourceCostsId.class)
+@IdClass(ShipTypeResourceId.class)
 public class ShipTypeResourceCosts {
     @Id
     @Column(name = "SHIP_TYPE_ID")

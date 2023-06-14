@@ -346,6 +346,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Fleet'
+    patch:
+      operationId: renameFleet
+      requestBody: 
+        content: 
+          application/json:
+            schema: 
+              properties: 
+                nickname:
+                  $ref: '#/components/schemas/Nickname'
+      responses: 
+        '200':
+          description: sucessful renamed fleet
+          content: 
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/Fleet'
   /my/fleets/{nickname}/fuel:
     parameters:
       -
@@ -368,7 +384,6 @@ paths:
     post:
       operationId: refuelFleet
       requestBody:
-        required: false
         content:
           application/json:
             schema:
@@ -382,6 +397,139 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ResourceLevel'
+  /my/fleets/{nickname}/orbit:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+    post:
+      operationId: fleetToOrbit
+      responses:
+        '200':
+          description: Fleet is sent to the orbit
+          content:
+            applcation/json:
+              schema:
+                $ref: '#/components/schemas/Fleet'
+  /my/fleets/{nickname}/port:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+    post:
+      operationId: fleetToPort
+      responses:
+        '200':
+          description: Fleet is sent to the port
+          content:
+            applcation/json:
+              schema:
+                $ref: '#/components/schemas/Fleet'
+  /my/fleets/{nickname}/resources:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrieveFleetResources
+      responses:
+        '200':
+          description: Returns all resources in the fleet
+          content:
+            applcation/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
+    post:
+      operationId: setResourcesInFleet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResourceLevel'
+      responses:
+        '200':
+          description: Resources in fleet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
+  /my/fleets/{nickname}/recyclables:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+    get:
+      operationId: retrieveFleetRecyclables
+      responses:
+        '200':
+          description: Returns all recyclables in the fleet
+          content:
+            applcation/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceLevel'
+  /my/fleets/{nickname}/destinations/{planetId}:
+    parameters:
+      -
+        name: nickname
+        in: path
+        schema:
+          type: string
+        required: true
+      -
+        name: planetId
+        in: path
+        schema:
+          type: string
+        required: true
+    post:
+      operationId: flyToDesination
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                camouflaged:
+                  type: boolean
+      responses:
+        '200':
+          description: Returns information obout the flight
+          content:
+            applcation/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fleet'
+    get:
+      operationId: retrieveFlightInfomation
+      responses:
+        '200':
+          description: Returns information for the flight to the assigned destination
+          content:
+            applcation/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fleet'
   /my/researchs:
     get:
       operationId: retrieveResearchLevels
@@ -665,6 +813,9 @@ components:
           $ref: '#/components/schemas/Nickname'
         planetId:
           type: string
+        arivialTime:
+          type: string
+          format: date-time
         shipTypeCounts:
           type: array
           items:
@@ -683,12 +834,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResourceLevel'
+        characteristics:
+          type: array
+          items:
+            $ref: '#/components/schemas/CharacteristicValue'
     ShipTypeCount:
       properties:
         shipType:
           $ref: '#/components/schemas/Nickname'
         count:
           type: integer
+          format: int64
     Ship:
       properties:
         shipType:
@@ -729,13 +885,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ResourceLevel'
+        fuelConsumptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceLevel'
         researchTimeInSeconds:
-          type: integer
-          format: int64
-        hydrogenConsumptionPerHour:
-          type: integer
-          format: int64
-        oxygenConsumptionPerHour:
           type: integer
           format: int64
         ready:

@@ -1,6 +1,5 @@
 package de.neebs.spacepeoples.control;
 
-import de.neebs.spacepeoples.entity.ShipTypeCount;
 import de.neebs.spacepeoples.integration.jpa.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +20,8 @@ public class TypeConverter {
 
     private final GalaxyRepository galaxyRepository;
 
-    public de.neebs.spacepeoples.entity.Ship convert(Ship ship) {
-        return convert(List.of(ship)).get(0);
+    public de.neebs.spacepeoples.entity.Ship convertShips(Ship ship) {
+        return this.convertShips(List.of(ship)).get(0);
         /*
         Optional<ShipType> optionalShipType = shipTypeRepository.findById(ship.getShipTypeId());
         if (optionalShipType.isEmpty()) {
@@ -47,7 +46,7 @@ public class TypeConverter {
          */
     }
 
-    public List<de.neebs.spacepeoples.entity.Ship> convert(List<Ship> ships) {
+    public List<de.neebs.spacepeoples.entity.Ship> convertShips(List<Ship> ships) {
         List<String> shipTypeIds = ships.stream().map(Ship::getShipTypeId).distinct().collect(Collectors.toList());
         List<ShipType> shipTypes = StreamSupport.stream(shipTypeRepository.findAllById(shipTypeIds).spliterator(), false).collect(Collectors.toList());
         List<String> planetIds = ships.stream().map(Ship::getPlanetId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
@@ -80,6 +79,27 @@ public class TypeConverter {
             s.setFleetName(null);
             s.setReady(ship.getReady());
             list.add(s);
+        }
+        return list;
+    }
+
+    public List<de.neebs.spacepeoples.entity.Fleet> convertFleets(List<FullFleet> fleets) {
+        List<de.neebs.spacepeoples.entity.Fleet> list = new ArrayList<>();
+        for (FullFleet fleet : fleets) {
+            de.neebs.spacepeoples.entity.Fleet fl = new de.neebs.spacepeoples.entity.Fleet();
+            fl.setStatus(fleet.getFleet().getStatus());
+            fl.setNickname(fleet.getFleet().getNickname());
+            fl.setArivialTime(fleet.getFleet().getNextStatusUpdate());
+            if (fleet.getFleetFuels() != null) {
+                fl.setFuel(fleet.getFleetFuels().stream().map(FleetFuel::toWeb).collect(Collectors.toList()));
+            }
+            if (fleet.getFleetShipTypeCounts() != null) {
+                fl.setShipTypeCounts(fleet.getFleetShipTypeCounts().stream().map(ShipTypeCount::toWeb).collect(Collectors.toList()));
+            }
+            if (fleet.getFleetCharacteristics() != null) {
+                fl.setCharacteristics(fleet.getFleetCharacteristics().stream().map(FleetCharacteristic::toWeb).collect(Collectors.toList()));
+            }
+            list.add(fl);
         }
         return list;
     }

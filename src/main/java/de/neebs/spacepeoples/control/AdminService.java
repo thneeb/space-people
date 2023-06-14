@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -23,6 +20,10 @@ public class AdminService {
     private final DatabaseService databaseService;
 
     public Galaxy createGalaxy(String nickname) {
+        Optional<Galaxy> optional = galaxyRepository.findByNickname(nickname);
+        if (optional.isPresent()) {
+            return optional.get();
+        }
         Galaxy galaxy = new Galaxy();
         galaxy.setGalaxyId(UUID.randomUUID().toString());
         galaxy.setNickname(nickname);

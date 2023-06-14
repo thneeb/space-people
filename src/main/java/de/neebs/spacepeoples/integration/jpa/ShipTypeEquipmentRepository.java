@@ -4,10 +4,11 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface ShipTypeEquipmentRepository extends CrudRepository<ShipTypeEquipment, ShipTypeEquipmentId> {
-    Iterable<ShipTypeEquipment> findAllByShipTypeId(String shipTypeId);
+    List<ShipTypeEquipment> findAllByShipTypeId(String shipTypeId);
 
-    Iterable<ShipTypeEquipment> findAllByShipTypeIdIn(Collection<String> shipTypeIds);
+    List<ShipTypeEquipment> findAllByShipTypeIdIn(Collection<String> shipTypeIds);
 }

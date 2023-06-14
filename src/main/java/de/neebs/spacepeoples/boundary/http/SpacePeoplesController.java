@@ -13,6 +13,7 @@ import de.neebs.spacepeoples.entity.ResourceType;
 import de.neebs.spacepeoples.entity.Ship;
 import de.neebs.spacepeoples.entity.ShipType;
 import de.neebs.spacepeoples.entity.*;
+import de.neebs.spacepeoples.entity.ShipTypeCount;
 import de.neebs.spacepeoples.integration.jpa.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -201,20 +202,32 @@ public class SpacePeoplesController implements DefaultApi {
     @Override
     public ResponseEntity<List<Ship>> retrieveShips() {
         String accountId = getAccountId();
-        return ResponseEntity.ok(typeConverter.convert(shipService.retrieveShips(accountId)));
+        return ResponseEntity.ok(typeConverter.convertShips(shipService.retrieveShips(accountId)));
     }
 
     @Override
     public ResponseEntity<Ship> createShip(Ship ship) {
         IdContainer idContainer = getIdContainer(ship.getPlanetId());
-        return ResponseEntity.ok(typeConverter.convert(shipService.createShip(idContainer.getAccountId(), ship.getShipType(), idContainer.getPlanetId())));
+        return ResponseEntity.ok(typeConverter.convertShips(shipService.createShip(idContainer.getAccountId(), ship.getShipType(), idContainer.getPlanetId())));
+    }
+
+    @Override
+    public ResponseEntity<List<Fleet>> retrieveFleets() {
+        String accountId = getAccountId();
+        return ResponseEntity.ok(typeConverter.convertFleets(fleetService.retrieveFleets(accountId)));
     }
 
     @Override
     public ResponseEntity<Fleet> createFleet(Fleet fleet) {
-        IdContainer idContainer= getIdContainer(fleet.getPlanetId());
+        IdContainer idContainer = getIdContainer(fleet.getPlanetId());
         fleetService.createFleet(fleet.getNickname(), idContainer.getAccountId(), idContainer.getPlanetId(), fleet.getShipTypeCounts().stream().collect(Collectors.toMap(ShipTypeCount::getShipType, ShipTypeCount::getCount)));
         return ResponseEntity.ok(fleet);
+    }
+
+    @Override
+    public ResponseEntity<Fleet> renameFleet(String nickname, RenameFleetRequest renameFleetRequest) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok(fleetService.renameFleet(accountId, nickname, renameFleetRequest.getNickname()).toWeb());
     }
 
     @Override
@@ -227,6 +240,30 @@ public class SpacePeoplesController implements DefaultApi {
     public ResponseEntity<List<ResourceLevel>> refuelFleet(String nickname, FuelLevel fuelLevel) {
         String accountId = getAccountId();
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fleetService.refuelFleet(accountId, nickname).stream().map(FleetFuel::toWeb).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResponseEntity<List<ResourceLevel>> retrieveFleetResources(String nickname) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok(fleetService.retrieveResources(accountId, nickname).stream().map(FleetResource::toWeb).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResponseEntity<List<ResourceLevel>> setResourcesInFleet(String nickname, List<ResourceLevel> resourceLevel) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok(fleetService.setResourcesInFleet(accountId, nickname, resourceLevel.stream().collect(Collectors.toMap(f -> f.getResourceType().name(), ResourceLevel::getUnits))).stream().map(FleetResource::toWeb).collect(Collectors.toList()));
+    }
+
+    @Override
+    public ResponseEntity<Fleet> fleetToOrbit(String nickname) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fleetService.fleetToOrbit(accountId, nickname).toWeb());
+    }
+
+    @Override
+    public ResponseEntity<Fleet> fleetToPort(String nickname) {
+        String accountId = getAccountId();
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fleetService.fleetToPort(accountId, nickname).toWeb());
     }
 
     private IdContainer getIdContainer(String planetId) {

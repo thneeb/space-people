@@ -17,8 +17,6 @@ import java.util.stream.StreamSupport;
 public class ResearchService {
     private final ResearchLevelRepository researchLevelRepository;
 
-    private final PlanetRepository planetRepository;
-
     private final PlanetResourceRepository planetResourceRepository;
 
     private final BuildingRepository buildingRepository;
@@ -39,21 +37,26 @@ public class ResearchService {
 
     private final ShipTypeResourceCostsRepository shipTypeResourceCostsRepository;
 
+    private final ShipTypeFuelConsumptionRepository shipTypeFuelConsumptionRepository;
+
     private final DatabaseService databaseService;
 
     public List<ResearchLevel> retrieveResearchLevels(String accountId) {
-        return StreamSupport.stream(researchLevelRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
+        return researchLevelRepository.findByAccountId(accountId);
     }
 
     public ResearchLevel upgradeResearch(String researchType, String accountId, String planetId) {
-        Optional<ResearchType> optionalResearchType = researchTypeRepository.findById(researchType);
-        if (optionalResearchType.isEmpty()) {
-            throw new IllegalArgumentException();
+        List<ResearchLevel> researchLevels = researchLevelRepository.findByAccountId(accountId);
+        for (ResearchLevel rl : researchLevels) {
+            if (rl.getResearchType().equals(researchType) && planetId.equals(rl.getPlanetId())) {
+                return rl;
+            }
+            if (planetId.equals(rl.getPlanetId())) {
+                throw new FacilityBusyException("Research Facility on planet is already busy");
+            }
         }
-        Optional<Planet> optionalPlanet = planetRepository.findById(planetId);
-        if (optionalPlanet.isEmpty()) {
-            throw new PlanetNotAvailableException();
-        }
+
+        ResearchType researchType1 = researchTypeRepository.findById(researchType).orElseThrow(IllegalArgumentException::new);
         List<ResearchPrerequisite> researchPrerequisites = databaseService.findResearchPrerequisites(accountId, researchType);
         if (!researchPrerequisites.isEmpty()) {
             throw new ResearchPrerequisiteException(researchPrerequisites.toString());
@@ -69,27 +72,20 @@ public class ResearchService {
         if (optionalResearchFacility.isEmpty() || optionalResearchFacility.get().getLevel() == 0) {
             throw new BuildingNotAvailableException("Cannot do research without a research facility");
         }
-        List<ResearchLevel> researchLevels = StreamSupport.stream(researchLevelRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
-        for (ResearchLevel rl : researchLevels) {
-            if (planetId.equals(rl.getPlanetId())) {
-                throw new FacilityBusyException("Research Facility on planet is already busy");
-            }
-        }
-
-        Optional<ResearchLevel> optionalResearchLevel = researchLevels.stream().filter(f -> f.getResourceType().equals(researchType)).findAny();
+        Optional<ResearchLevel> optionalResearchLevel = researchLevels.stream().filter(f -> f.getResearchType().equals(researchType)).findAny();
         ResearchLevel researchLevel;
         if (optionalResearchLevel.isEmpty()) {
             researchLevel = new ResearchLevel();
             researchLevel.setLevel(0);
-            researchLevel.setResourceType(researchType);
+            researchLevel.setResearchType(researchType);
             researchLevel.setAccountId(accountId);
         } else {
             researchLevel = optionalResearchLevel.get();
         }
         researchLevel.setPlanetId(planetId);
 
-        List<PlanetResource> planetResources = StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-        List<ResearchResourceResearchCosts> researchResourceResearchCosts = StreamSupport.stream(researchResourceResearchCostsRepository.findByResearchType(researchType).spliterator(), false).collect(Collectors.toList());
+        List<PlanetResource> planetResources = planetResourceRepository.findByPlanetId(planetId);
+        List<ResearchResourceResearchCosts> researchResourceResearchCosts = researchResourceResearchCostsRepository.findByResearchType(researchType);
         for (ResearchResourceResearchCosts costs : researchResourceResearchCosts) {
             Optional<PlanetResource> optionalPlanetResource = planetResources.stream().filter(f -> f.getResourceType().equals(costs.getResourceType())).findAny();
             if (optionalPlanetResource.isEmpty()) {
@@ -102,13 +98,13 @@ public class ResearchService {
             optionalPlanetResource.get().setUnits(units);
         }
         Calendar calendar = GregorianCalendar.getInstance();
-        calendar.add(Calendar.SECOND, (int)(optionalResearchType.get().getResearchInSeconds() * Math.pow(optionalResearchType.get().getDurationLevelBase(), researchLevel.getLevel()) * Math.pow(optionalResearchType.get().getFacilityBase(), optionalResearchFacility.get().getLevel())));
+        calendar.add(Calendar.SECOND, (int)(researchType1.getResearchInSeconds() * Math.pow(researchType1.getDurationLevelBase(), researchLevel.getLevel()) * Math.pow(researchType1.getFacilityBase(), optionalResearchFacility.get().getLevel())));
         researchLevel.setNextLevelUpdate(calendar.getTime());
         return researchLevelRepository.save(researchLevel);
     }
 
     public FullShipType evaluateShipType(String accountId, String planetId, boolean manned, List<ShipTypeEquipment> equipments) {
-        List<ResearchLevel> researchLevels = StreamSupport.stream(researchLevelRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
+        List<ResearchLevel> researchLevels = researchLevelRepository.findByAccountId(accountId);
 
         return internalShipTypeCalculation(accountId, planetId, manned, equipments, researchLevels);
     }
@@ -129,11 +125,8 @@ public class ResearchService {
         BuildingId buildingId = new BuildingId();
         buildingId.setBuildingType(BuildingTypeEnum.RESEARCH_FACILITY.name());
         buildingId.setPlanetId(planetId);
-        Optional<Building> optionalResearchFacility = buildingRepository.findById(buildingId);
-        if (optionalResearchFacility.isEmpty()) {
-            throw new BuildingNotAvailableException("No ShipType research without a RESEARCH_FACILITY");
-        }
-        int researchFacilityLevel = optionalResearchFacility.get().getLevel();
+        Building researchFacility = buildingRepository.findById(buildingId).orElseThrow(() -> new BuildingNotAvailableException("No ShipType research without a RESEARCH_FACILITY"));
+        int researchFacilityLevel = researchFacility.getLevel();
 
         String shipTypeId = UUID.randomUUID().toString();
         int basicUnit = 0;
@@ -143,13 +136,10 @@ public class ResearchService {
                 continue;
             }
             // extract the shipPartType
-            Optional<ResearchType> optionalShipPartType = researchTypes.stream().filter(f -> f.getResearchType().equals(equipment.getResearchType())).findAny();
-            if (optionalShipPartType.isEmpty()) {
-                throw new IllegalStateException();
-            }
+            ResearchType researchType = researchTypes.stream().filter(f -> f.getResearchType().equals(equipment.getResearchType())).findAny().orElseThrow(IllegalArgumentException::new);
             // if the used component has no per level wight we use 1 - these components are automatically upgraded and only count with a fix value
             int level;
-            if (optionalShipPartType.get().getSpacePerLevel() == 0) {
+            if (researchType.getSpacePerLevel() == 0) {
                 level = 1;
                 equipment.setLevel(null);
             } else {
@@ -160,18 +150,18 @@ public class ResearchService {
                 throw new ShipPartMissingException("No negative levels of ship parts can be used");
             }
             // the researched level must at least hit the used level
-            Optional<ResearchLevel> optionalResearchLevel = researchLevels.stream().filter(f -> f.getResourceType().equals(equipment.getResearchType())).findAny();
-            if (optionalResearchLevel.isEmpty() || optionalResearchLevel.get().getLevel() < level) {
-                throw new ShipPartMissingException("The installed ship part must be researched at least to the used level");
+            ResearchLevel researchLevel = researchLevels.stream().filter(f -> f.getResearchType().equals(equipment.getResearchType())).findAny().orElseThrow(() -> new ShipPartMissingException(equipment.getResearchType() + " is not researched at all"));
+            if (researchLevel.getLevel() < level) {
+                throw new ShipPartMissingException(researchLevel.getResearchType() + " must be further researched " + level + "/" + researchLevel.getLevel());
             }
             // set missing attributes
             equipment.setShipTypeId(shipTypeId);
             // calculate the needed basic unit for the additional parts
-            basicUnit += optionalShipPartType.get().getSpaceFix() + optionalShipPartType.get().getSpacePerLevel() * equipment.getLevel();
+            basicUnit += researchType.getSpaceFix() + researchType.getSpacePerLevel() * equipment.getLevel();
         }
 
         // Is BASIC_UNIT enough researched?
-        Optional<ResearchLevel> optionalResearchLevel = researchLevels.stream().filter(f -> "BASIC_UNIT".equals(f.getResourceType())).findAny();
+        Optional<ResearchLevel> optionalResearchLevel = researchLevels.stream().filter(f -> "BASIC_UNIT".equals(f.getResearchType())).findAny();
         if (optionalResearchLevel.isEmpty() || optionalResearchLevel.get().getLevel() == 0) {
             throw new ShipPartMissingException("BASIC_UNIT must be researched");
         }
@@ -234,8 +224,9 @@ public class ResearchService {
             }
         }
 
-        long hydrogenConsumption = 0;
-        long oxygenConsumption = 0;
+        ShipTypeFuelConsumption oxygen = new ShipTypeFuelConsumption(shipTypeId, ResourceTypeEnum.OXYGEN.name(), 0);
+        ShipTypeFuelConsumption hydrogen = new ShipTypeFuelConsumption(shipTypeId, ResourceTypeEnum.HYDROGEN.name(), 0);
+        List<ShipTypeFuelConsumption> consumptions = List.of(oxygen, hydrogen);
         List<ShipTypeCharacteristic> shipTypeCharacteristics = new ArrayList<>();
         for (Characterstic characteristic : characteristics) {
             if (characteristic.getCharacteristic().equals("SPECIAL_UNIT")) {
@@ -253,14 +244,14 @@ public class ResearchService {
                     value += basicValue * Math.pow(researchType.getBenefitBase(), optionalEquipment.get().getLevel() + researchType.getBenefitExponentModifier());
                     switch (researchType.getResearchType()) {
                         case "COMBUSTION_DRIVE":
-                            oxygenConsumption += Math.round(1 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555));
-                            hydrogenConsumption += Math.round(2 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555));
+                            oxygen.setUnits(oxygen.getUnits() + Math.round(1 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555)));
+                            hydrogen.setUnits(hydrogen.getUnits() + Math.round(2 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555)));
                             break;
                         case "FUSION_DRIVE":
-                            hydrogenConsumption += Math.round(3 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555));
+                            hydrogen.setUnits(hydrogen.getUnits() + Math.round(3 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555)));
                             break;
                         case "TIME_WARP_DRIVE":
-                            hydrogenConsumption += Math.round(2 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555));
+                            hydrogen.setUnits(hydrogen.getUnits() + Math.round(2 * Math.pow(1.11, optionalEquipment.get().getLevel() - 0.555)));
                             break;
                     }
                 }
@@ -282,15 +273,17 @@ public class ResearchService {
         shipType.setAccountId(accountId);
         shipType.setResearchTimeInSeconds(researchTime);
         shipType.setBuildingTimeInSeconds(buildingTime);
-        shipType.setOxygenConsumptionPerHour(oxygenConsumption);
-        shipType.setHydrogenConsumptionPerHour(hydrogenConsumption);
         shipType.setPlanetId(planetId);
         shipType.setReady(ready);
-        return new FullShipType(shipType, equipments, shipTypeCharacteristics, shipTypeBuildingCosts, shipTypeResearchCosts);
+        return new FullShipType(shipType, equipments, shipTypeCharacteristics, shipTypeBuildingCosts, shipTypeResearchCosts, consumptions);
     }
 
     public FullShipType createShipType(String accountId, String planetId, String nickname, boolean manned, List<ShipTypeEquipment> equipments) {
-        List<ResearchLevel> researchLevels = StreamSupport.stream(researchLevelRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
+        Optional<ShipType> optionalShipType = shipTypeRepository.findByAccountIdAndNickname(accountId, nickname);
+        if (optionalShipType.isPresent()) {
+            return internalRetrieveShipTypes(List.of(optionalShipType.get())).get(0);
+        }
+        List<ResearchLevel> researchLevels = researchLevelRepository.findByAccountId(accountId);
 
         FullShipType fullShipType = internalShipTypeCalculation(accountId, planetId, manned, equipments, researchLevels);
 
@@ -300,8 +293,11 @@ public class ResearchService {
         if (shipTypeRepository.findByPlanetId(planetId).isPresent()) {
             throw new FacilityBusyException("RESEARCH_FACILITY is busy researching another ship type");
         }
+        if (shipTypeRepository.findByAccountIdAndNickname(accountId, nickname).isPresent()) {
+            throw new ShipTypeAlreadyExistsException();
+        }
 
-        List<PlanetResource> resources = StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        List<PlanetResource> resources = planetResourceRepository.findByPlanetId(planetId);
 
         for (ShipTypeResourceCosts c : fullShipType.getResearchResources()) {
             Optional<PlanetResource> optional = resources.stream().filter(f -> f.getResourceType().equals(c.getResourceType())).findAny();
@@ -319,18 +315,28 @@ public class ResearchService {
         shipTypeEquipmentRepository.saveAll(fullShipType.getEquipments());
         shipTypeCharacteristicRepository.saveAll(fullShipType.getCharacteristics());
         shipTypeResourceCostsRepository.saveAll(fullShipType.getBuildingResources());
+        shipTypeFuelConsumptionRepository.saveAll(fullShipType.getFuelConsumptions());
         return fullShipType;
     }
 
     public List<FullShipType> retrieveShipTypes(String accountId) {
-        List<ShipType> shipTypes = StreamSupport.stream(shipTypeRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
+        List<ShipType> shipTypes = shipTypeRepository.findByAccountId(accountId);
+        return internalRetrieveShipTypes(shipTypes);
+    }
+
+    private List<FullShipType> internalRetrieveShipTypes(List<ShipType> shipTypes) {
         List<String> shipTypeIds = shipTypes.stream().map(ShipType::getShipTypeId).collect(Collectors.toList());
-        List<ShipTypeEquipment> shipTypeEquipment = StreamSupport.stream(shipTypeEquipmentRepository.findAllByShipTypeIdIn(shipTypeIds).spliterator(), false).collect(Collectors.toList());
-        List<ShipTypeCharacteristic> shipTypeCharacteristics = StreamSupport.stream(shipTypeCharacteristicRepository.findByShipTypeIdIn(shipTypeIds).spliterator(), false).collect(Collectors.toList());
-        List<ShipTypeResourceCosts> shipTypeResourceCosts = StreamSupport.stream(shipTypeResourceCostsRepository.findByShipTypeIdIn(shipTypeIds).spliterator(), false).collect(Collectors.toList());
+        List<ShipTypeEquipment> shipTypeEquipment = shipTypeEquipmentRepository.findAllByShipTypeIdIn(shipTypeIds);
+        List<ShipTypeCharacteristic> shipTypeCharacteristics = shipTypeCharacteristicRepository.findByShipTypeIdIn(shipTypeIds);
+        List<ShipTypeResourceCosts> shipTypeResourceCosts = shipTypeResourceCostsRepository.findByShipTypeIdIn(shipTypeIds);
+        List<ShipTypeFuelConsumption> shipTypeFuelConsumptions = shipTypeFuelConsumptionRepository.findByShipTypeIdIn(shipTypeIds);
         List<FullShipType> list = new ArrayList<>();
         for (ShipType shipType : shipTypes) {
-            list.add(new FullShipType(shipType, shipTypeEquipment.stream().filter(f -> f.getShipTypeId().equals(shipType.getShipTypeId())).collect(Collectors.toList()), shipTypeCharacteristics, shipTypeResourceCosts, null));
+            list.add(new FullShipType(shipType, shipTypeEquipment.stream().filter(f -> f.getShipTypeId().equals(shipType.getShipTypeId())).collect(Collectors.toList()),
+                    shipTypeCharacteristics.stream().filter(f -> f.getShipTypeId().equals(shipType.getShipTypeId())).collect(Collectors.toList()),
+                    shipTypeResourceCosts.stream().filter(f -> f.getShipTypeId().equals(shipType.getShipTypeId())).collect(Collectors.toList()),
+                    null,
+                    shipTypeFuelConsumptions.stream().filter(f -> f.getShipTypeId().equals(shipType.getShipTypeId())).collect(Collectors.toList())));
         }
         return list;
     }

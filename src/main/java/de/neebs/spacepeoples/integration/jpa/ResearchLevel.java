@@ -19,7 +19,7 @@ public class ResearchLevel {
 
     @Id
     @Column(name = "RESEARCH_TYPE")
-    private String resourceType;
+    private String researchType;
 
     @Column(name = "LEVEL")
     private int level;
@@ -33,7 +33,7 @@ public class ResearchLevel {
     public de.neebs.spacepeoples.entity.ResearchLevel toWeb() {
         de.neebs.spacepeoples.entity.ResearchLevel researchLevel = new de.neebs.spacepeoples.entity.ResearchLevel();
         researchLevel.setLevel(level);
-        researchLevel.setResearchType(ResearchType.valueOf(resourceType));
+        researchLevel.setResearchType(ResearchType.valueOf(researchType));
         researchLevel.setPlanetId(planetId);
         researchLevel.setNextLevelUpdate(nextLevelUpdate);
         return researchLevel;

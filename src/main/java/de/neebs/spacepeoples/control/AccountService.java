@@ -16,8 +16,6 @@ import java.util.UUID;
 public class AccountService {
     private final AccountRepository accountRepository;
 
-    private final UniverseService universeService;
-
     public Agent retrieveAgent(String accountId) {
         Optional<Account> optional = accountRepository.findById(accountId);
         if (optional.isEmpty()) {

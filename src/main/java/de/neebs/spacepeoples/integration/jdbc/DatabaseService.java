@@ -32,7 +32,7 @@ public class DatabaseService {
 
     public int executeResourceProduction() {
         return jdbcTemplate.update("UPDATE planet_resource re\n" +
-                "SET units = units + LEAST(prp.additional_units, GREATEST(COALESCE(psa.capacity_supply, 0) - COALESCE(psu.storage_used), 0)), next_update = prp.next_update, last_update = NOW()\n" +
+                "SET units = units + LEAST(prp.additional_units, GREATEST(COALESCE(psa.capacity_supply, 0) - COALESCE(psu.storage_used, 0), 0)), next_update = prp.next_update, last_update = NOW()\n" +
                 "FROM planet_resource_production prp\n" +
                 "LEFT JOIN planet_capacity_supply psa ON psa.planet_id = prp.planet_id AND psa.capacity_type = 'STORAGE'\n" +
                 "LEFT JOIN planet_storage_used psu ON psu.planet_id = prp.planet_id\n" +
@@ -103,7 +103,7 @@ public class DatabaseService {
         });
     }
 
-    public int assignShipsToFleet(String fleetId, String planetId, String shipType, Integer count) {
+    public int assignShipsToFleet(String fleetId, String planetId, String shipType, Long count) {
         return jdbcTemplate.update("UPDATE ship " +
                 "SET fleet_id = ? " +
                 "WHERE ship_id IN (" +
@@ -119,5 +119,9 @@ public class DatabaseService {
 
     public int finishShips() {
         return jdbcTemplate.update("UPDATE ship SET ready = NULL WHERE ready <= NOW()");
+    }
+
+    public int finishFleetActions() {
+        return jdbcTemplate.update("UPDATE fleet SET next_status_update = NULL WHERE fleet.next_status_update <= NOW()");
     }
 }

@@ -2,21 +2,17 @@ package de.neebs.spacepeoples.integration.jpa;
 
 import de.neebs.spacepeoples.entity.ResourceLevel;
 import de.neebs.spacepeoples.entity.ResourceType;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
-@Table(name = "FLEET_FUEL")
+@Table(name = "FLEET_RESOURCE")
 @IdClass(FleetResourceId.class)
-public class FleetFuel {
+public class FleetResource {
     @Id
     @Column(name = "FLEET_ID")
     private String fleetId;

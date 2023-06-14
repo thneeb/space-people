@@ -31,12 +31,6 @@ public class ShipType {
     @Transient
     private Long buildingTimeInSeconds;
 
-    @Column(name = "HYDROGEN_CONSUMPTION_PER_HOUR")
-    private Long hydrogenConsumptionPerHour;
-
-    @Column(name = "OXYGEN_CONSUMPTION_PER_HOUR")
-    private Long oxygenConsumptionPerHour;
-
     @Column(name = "PLANET_ID")
     private String planetId;
 

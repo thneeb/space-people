@@ -7,6 +7,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -28,4 +29,15 @@ public class Fleet {
 
     @Column(name = "PLANET_ID")
     private String planetId;
+
+    @Column(name = "NEXT_STATUS_UPDATE")
+    private Date nextStatusUpdate;
+
+    public de.neebs.spacepeoples.entity.Fleet toWeb() {
+        de.neebs.spacepeoples.entity.Fleet fleet = new de.neebs.spacepeoples.entity.Fleet();
+        fleet.setNickname(nickname);
+        fleet.setStatus(status);
+        fleet.setArivialTime(nextStatusUpdate);
+        return fleet;
+    }
 }

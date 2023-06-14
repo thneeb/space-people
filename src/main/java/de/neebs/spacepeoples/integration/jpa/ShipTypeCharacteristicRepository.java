@@ -7,5 +7,5 @@ import java.util.List;
 
 @Repository
 public interface ShipTypeCharacteristicRepository extends CrudRepository<ShipTypeCharacteristic, ShipTypeCharacteristicId> {
-    Iterable<ShipTypeCharacteristic> findByShipTypeIdIn(List<String> shipTypeIds);
+    List<ShipTypeCharacteristic> findByShipTypeIdIn(List<String> shipTypeIds);
 }

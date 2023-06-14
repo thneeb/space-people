@@ -59,4 +59,12 @@ public class EventProcessor {
             log.debug("Finished ships: " + finished);
         }
     }
+
+    @Scheduled(fixedRate = 1000)
+    public void finishFleetActions() {
+        int finished = databaseService.finishFleetActions();
+        if (finished > 0) {
+            log.debug("Finished fleet actions: " + finished);
+        }
+    }
 }

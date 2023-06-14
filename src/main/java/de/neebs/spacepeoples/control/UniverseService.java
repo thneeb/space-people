@@ -32,14 +32,13 @@ public class UniverseService {
     private final PlanetRecycleResourceRepository planetRecycleResourceRepository;
 
     public List<Planet> retrievePlanets(String galaxyName) {
-        List<Planet> list = StreamSupport.stream(planetRepository.findByUniverseName(galaxyName).spliterator(), false).collect(Collectors.toList());
+        List<Planet> list = planetRepository.findByUniverseName(galaxyName);
         list.forEach(f -> f.setGalaxyName(galaxyName));
         return list;
     }
 
     public String assignFreePlanet(String accountId) {
-        Iterable<Planet> planets = planetRepository.findFreeSolarSystem();
-        List<Planet> list = StreamSupport.stream(planets.spliterator(), false).collect(Collectors.toList());
+        List<Planet> list = planetRepository.findFreeSolarSystem();
         if (list.size() == 0) {
             throw new PlanetNotAvailableException();
         }
@@ -62,7 +61,7 @@ public class UniverseService {
     }
 
     public List<Planet> retrievePlanetsByAccountId(String accountId) {
-        List<Planet> planets = StreamSupport.stream(planetRepository.findByAccountId(accountId).spliterator(), false).collect(Collectors.toList());
+        List<Planet> planets = planetRepository.findByAccountId(accountId);
         List<String> galaxyIds = planets.stream().map(Planet::getGalaxyId).distinct().collect(Collectors.toList());
         List<Galaxy> galaxies = StreamSupport.stream(galaxyRepository.findAllById(galaxyIds).spliterator(), false).collect(Collectors.toList());
         planets.forEach(f -> f.setGalaxyName(Objects.requireNonNull(galaxies.stream().filter(g -> g.getGalaxyId().equals(f.getGalaxyId())).findAny().orElse(null)).getNickname()));
@@ -83,7 +82,7 @@ public class UniverseService {
     }
 
     public List<PlanetResource> retrieveResources(String planetId) {
-        return StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        return planetResourceRepository.findByPlanetId(planetId);
     }
 
     public IdContainer retrievePlanetIdContainer(String planetId) {
@@ -100,22 +99,21 @@ public class UniverseService {
     }
 
     public List<Building> retrieveBuildings(String planetId) {
-        return StreamSupport.stream(buildingRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        return buildingRepository.findByPlanetId(planetId);
     }
 
     public Building upgradeBuilding(String planetId, BuildingTypeEnum buildingType) {
-        // general check: building type exists in database.
-        Optional<BuildingType> optionalBuildingType = buildingTypeRepository.findById(buildingType.name());
-        if (optionalBuildingType.isEmpty()) {
-            throw new IllegalArgumentException();
-        }
         // only one building can be upgraded / build at one time
         List<Building> buildings = retrieveBuildings(planetId);
         Optional<Building> optionalBuilding = buildings.stream().filter(f -> f.getBuildingType().equals(buildingType.name())).findAny();
         int level = optionalBuilding.map(Building::getLevel).orElse(0);
         for (Building building : buildings) {
             if (building.getNextLevelUpdate() != null) {
-                throw new FacilityBusyException("Only one building can be build / upgraded at one time");
+                if (building.getBuildingType().equals(buildingType.name())) {
+                    return building;
+                } else {
+                    throw new FacilityBusyException("Only one building can be build / upgraded at one time");
+                }
             }
         }
         // find out level of the building yard
@@ -129,8 +127,8 @@ public class UniverseService {
             buildingYardLevel = 0;
         }
         // does the new building / upgrade fit into the available capacities
-        List<PlanetCapacitySupply> planetCapacitySupplies = StreamSupport.stream(planetCapacitySupplyRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-        List<PlanetCapacityUsed> planetCapacityUsages = StreamSupport.stream(planetCapacityUsedRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        List<PlanetCapacitySupply> planetCapacitySupplies = planetCapacitySupplyRepository.findByPlanetId(planetId);
+        List<PlanetCapacityUsed> planetCapacityUsages = planetCapacityUsedRepository.findByPlanetId(planetId);
         for (PlanetCapacityUsed used : planetCapacityUsages) {
             Optional<PlanetCapacitySupply> optional = planetCapacitySupplies.stream().filter(f -> f.getCapacityType().equals(used.getCapacityType())).findAny();
             if (optional.isPresent() && optional.get().getCapacitySupply() < used.getCapacityUsed()) {
@@ -139,8 +137,8 @@ public class UniverseService {
         }
 
         // consume resources
-        List<PlanetResource> resources = StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-        List<BuildingResourceCosts> costs = StreamSupport.stream(buildingResourceCostsRepository.findByBuildingType(buildingType.name()).spliterator(), false).collect(Collectors.toList());
+        List<PlanetResource> resources = planetResourceRepository.findByPlanetId(planetId);
+        List<BuildingResourceCosts> costs = buildingResourceCostsRepository.findByBuildingType(buildingType.name());
         for (BuildingResourceCosts cost : costs) {
             Optional<PlanetResource> optional = resources.stream().filter(f -> f.getResourceType().equals(cost.getResourceType())).findAny();
             if (optional.isEmpty()) {
@@ -153,7 +151,11 @@ public class UniverseService {
         }
         planetResourceRepository.saveAll(resources);
         Calendar calendar = GregorianCalendar.getInstance();
-        int seconds = (int)(optionalBuildingType.get().getDurationInSeconds() * Math.pow(optionalBuildingType.get().getLevelBase(), level) * Math.pow(optionalBuildingType.get().getBuildingYardBase(), buildingYardLevel));
+
+        // general check: building type exists in database.
+        BuildingType bt = buildingTypeRepository.findById(buildingType.name()).orElseThrow(IllegalArgumentException::new);
+
+        int seconds = (int)(bt.getDurationInSeconds() * Math.pow(bt.getLevelBase(), level) * Math.pow(bt.getBuildingYardBase(), buildingYardLevel));
         calendar.add(Calendar.SECOND, seconds);
 
         Building building = new Building();
@@ -204,9 +206,9 @@ public class UniverseService {
             capacitySupply = optionalPlanetCapacitySupply.get().getCapacitySupply();
         }
         if (capacitySupply > 0) {
-            List<PlanetRecycleResource> recycleResources = StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+            List<PlanetRecycleResource> recycleResources = planetRecycleResourceRepository.findByPlanetId(planetId);
             long used = recycleResources.stream().mapToLong(PlanetRecycleResource::getUnits).sum();
-            List<BuildingResourceCosts> costs = StreamSupport.stream(buildingResourceCostsRepository.findByBuildingType(buildingType.name()).spliterator(), false).collect(Collectors.toList());
+            List<BuildingResourceCosts> costs = buildingResourceCostsRepository.findByBuildingType(buildingType.name());
             int recycleSum = (int)(costs.stream().mapToDouble(f -> (int) (f.getBasicValue() * Math.pow(f.getBase(), optionalBuilding.get().getLevel() + f.getExponentModifier()))).sum() * 0.75);
             double fraction = Math.min(1, (double) (capacitySupply - used) / recycleSum);
             for (BuildingResourceCosts cost : costs) {
@@ -231,8 +233,8 @@ public class UniverseService {
     }
 
     public List<CapacityLevel> retrievePlanetCapacities(String planetId) {
-        List<PlanetCapacitySupply> suppliedCapacities = StreamSupport.stream(planetCapacitySupplyRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
-        List<PlanetCapacityUsed> usedCapacities = StreamSupport.stream(planetCapacityUsedRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        List<PlanetCapacitySupply> suppliedCapacities = planetCapacitySupplyRepository.findByPlanetId(planetId);
+        List<PlanetCapacityUsed> usedCapacities = planetCapacityUsedRepository.findByPlanetId(planetId);
         List<CapacityLevel> capacityLevels = new ArrayList<>();
         for (PlanetCapacitySupply supply : suppliedCapacities) {
             Optional<PlanetCapacityUsed> optional = usedCapacities.stream().filter(f -> f.getCapacityType().equals(supply.getCapacityType())).findAny();
@@ -240,9 +242,9 @@ public class UniverseService {
             capacityLevel.setCapacityType(CapacityType.fromValue(supply.getCapacityType()));
             capacityLevel.setMaxUnits(supply.getCapacitySupply());
             if ("STORAGE".equals(supply.getCapacityType())) {
-                capacityLevel.setActualUnits(StreamSupport.stream(planetResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToLong(PlanetResource::getUnits).sum());
+                capacityLevel.setActualUnits(planetResourceRepository.findByPlanetId(planetId).stream().mapToLong(PlanetResource::getUnits).sum());
             } else if ("RECYCLE".equals(supply.getCapacityType())) {
-                capacityLevel.setActualUnits(StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).mapToLong(PlanetRecycleResource::getUnits).sum());
+                capacityLevel.setActualUnits(planetRecycleResourceRepository.findByPlanetId(planetId).stream().mapToLong(PlanetRecycleResource::getUnits).sum());
             } else {
                 if (optional.isEmpty()) {
                     capacityLevel.setActualUnits(0L);
@@ -256,7 +258,7 @@ public class UniverseService {
     }
 
     public List<PlanetRecycleResource> retrieveRecyclables(String planetId) {
-        return StreamSupport.stream(planetRecycleResourceRepository.findByPlanetId(planetId).spliterator(), false).collect(Collectors.toList());
+        return planetRecycleResourceRepository.findByPlanetId(planetId);
     }
 
     public PlanetRecycleResource discardRecyclables(String planetId, ResourceType resourceType, Long units) {
